@@ -33,7 +33,7 @@ impl fmt::Display for Time {
 }
 
 impl Time {
-    pub fn create() -> Self {
+    pub fn now() -> Self {
         let utc = Utc::now();
         Self {
             year: utc.date().year(),

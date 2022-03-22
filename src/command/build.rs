@@ -6,6 +6,7 @@ use {
         config::Config,
         content::{
             Kind,
+            Meta,
             Page,
         },
     },
@@ -18,36 +19,34 @@ use {
         path::PathBuf
     },
     url::Url,
+    walkdir::WalkDir,
 };
 
 struct Capsule {
     path: PathBuf,
-    posts: BTreeMap<i64, Page>,
-    pages: HashMap<String, Page>,
+    posts: BTreeMap<i64, Meta>,
+    pages: HashMap<PathBuf, Meta>,
 }
 
 impl Capsule {
-    fn init(path: &str) -> Self {
-        let posts = posts();
-        let pages = pages();
-        let path = PathBuf::from(path);
-        Self {
+    fn init(cfg: &Config, path: PathBuf) -> Result<Self, Box<dyn Error>> {
+        let (posts, pages) = items(cfg, &path)?;
+        Ok(Self {
             path,
             posts,
             pages,
-        }
+        })
     }
 
-    fn gen_rss(&self, cfg: &Config) -> Result<(), Box<dyn Error>> {
+    fn gen_rss(&self, cfg: &Config) -> Result<atom::Feed, Box<dyn Error>> {
         let mut entries: Vec<atom::Entry> = vec![];
-        for entry in posts().values().rev() {
+        for entry in self.posts.values().rev() {
             entries.push(entry.rss_entry(Kind::Post, cfg)?);
         }
-        let year = posts()
+        let year = self.posts
             .values()
             .last()
             .unwrap()
-            .meta
             .published
             .as_ref()
             .unwrap()
@@ -68,32 +67,104 @@ impl Capsule {
             .base(url.to_string())
             .entries(entries)
             .build();
-        Ok(())
+        Ok(feed)
     }
 
-    fn build(&self) -> Result<(), Box<dyn Error>> {
+    fn build(&self, cfg: &Config) -> Result<(), Box<dyn Error>> {
+        let rss = self.gen_rss(cfg);
         Ok(())
     }
 }
 
 
-fn posts() -> BTreeMap<i64, Page> {
-    let posts = BTreeMap::new();
-    posts
+fn posts() -> Result<BTreeMap<i64, Page>, Box<dyn Error>> {
+    let mut posts = BTreeMap::new();
+    for entry in WalkDir::new("content/gemlog") {
+        if let Ok(entry) = entry {
+            if let Some(s) = entry.path().extension() {
+                if let Some("gmi") = s.to_str() {
+                    if let Some(page) = Page::from_path(&PathBuf::from(entry.path())) {
+                        if let Some(ref time) = page.meta.published {
+                            posts.insert(time.timestamp()?, page);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Ok(posts)
 }
 
-fn pages() -> HashMap<String, Page> {
-    let pages = HashMap::new();
+fn pages() -> HashMap<PathBuf, Page> {
+    let mut pages = HashMap::new();
+    for entry in WalkDir::new("content") {
+        if let Ok(entry) = entry {
+            let path = PathBuf::from(entry.path());
+            if !path.starts_with("content/gemlog") {
+                if let Some(s) = path.extension() {
+                    if let Some("gmi") = s.to_str() {
+                        if let Some(page) = Page::from_path(&path) {
+                            pages.insert(path, page);
+                        }
+                    }
+                }
+            }
+        }
+    }
     pages
 }
 
-pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
-    if let Some(config) = Config::load() {
-        let path = matches.value_of("output").unwrap_or("public");
-        let capsule = Capsule::init(path);
-        capsule.build()?;
-        Ok(())
-    } else {
-        Err("Error loading config".to_string().into())
+fn items(cfg: &Config, output: &PathBuf) -> Result<(BTreeMap<i64, Meta>, HashMap<PathBuf, Meta>), Box<dyn Error>> {
+    let mut posts: BTreeMap<i64, Meta> = BTreeMap::new();
+    let mut pages: HashMap<PathBuf, Meta> = HashMap::new();
+    let mut current = std::env::current_dir()?;
+    current.push("content");
+    let current = std::fs::canonicalize(&current)?;
+    for entry in WalkDir::new("content") {
+        if let Ok(entry) = entry {
+            let path = PathBuf::from(entry.path());
+            let path = std::fs::canonicalize(&path)?;
+            let last = path.strip_prefix(&current)?;
+            let mut output = output.clone();
+            output.push(&last);
+            if let Some(parent) = output.parent() {
+                if !parent.exists() {
+                    std::fs::create_dir_all(&parent)?;
+                }
+            }
+            if let Some(s) = path.extension() {
+                if let Some("gmi") = s.to_str() {
+                    if let Some(page) = Page::from_path(&path) {
+                        if let Some(ref time) = page.meta.published {
+                            let path = path.strip_prefix(&current)?;
+                            if path.starts_with("gemlog") {
+                                page.render(&output)?;
+                                posts.insert(time.timestamp()?, page.meta);
+                            } else {
+                                page.render(&output)?;
+                                pages.insert(path.to_path_buf(), page.meta);
+                            }
+                        }
+                    }
+                } else {
+                    std::fs::copy(&path, &output)?;
+                }
+            } else {
+                std::fs::copy(&path, &output)?;
+            }
+        }
     }
+    Err(String::from("Unimplemented").into())
+}
+
+pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
+    let cfg = Config::load()?;
+    let mut output = PathBuf::from(matches.value_of("output").unwrap_or("public"));
+    if let Some(ref path) = cfg.path {
+        output.push(&path);
+    }
+    let output = std::fs::canonicalize(&output)?;
+    let capsule = Capsule::init(&cfg, output)?;
+    capsule.build(&cfg)?;
+    Ok(())
 }

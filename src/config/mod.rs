@@ -121,25 +121,12 @@ impl Config {
         })
     }
 
-    pub fn load() -> Option<Self> {
+    pub fn load() -> Result<Self, Box<dyn Error>> {
         let cfg_file = PathBuf::from("Config.ron");
-        let cfg_file = if cfg_file.exists() {
-            match fs::read_to_string(cfg_file) {
-                Ok(c) => c,
-                Err(e) => {
-                    eprintln!("{}", e);
-                    return None;
-                }
-            }
-        } else {
-            return None;
-        };
+        let cfg_file = fs::read_to_string(cfg_file).unwrap();
         match ron::de::from_str(&cfg_file) {
-            Ok(c) => Some(c),
-            Err(e) => {
-                eprintln!("{}", e);
-                None
-            }
+            Ok(s) => Ok(s),
+            Err(e) => Err(e.into()),
         }
     }
 

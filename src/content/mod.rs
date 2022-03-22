@@ -49,7 +49,7 @@ impl Meta {
     }
 
     fn publish(&mut self) {
-        self.published = Some(Time::create());
+        self.published = Some(Time::now());
     }
 
     fn categories(&self, cfg: &Config) -> Result<Vec<atom::Category>, Box<dyn Error>> {
@@ -74,15 +74,7 @@ impl Meta {
         }
         Ok(categories)
     }
-}
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Page {
-    pub meta: Meta,
-    pub content: String,
-}
-
-impl Page {
     fn get_path(title: &str, kind: Kind) -> PathBuf {
         let tpath = title.trim().to_lowercase().replace(" ", "_");
         let mut file = PathBuf::from("content");
@@ -99,7 +91,39 @@ impl Page {
         file
     }
 
-    fn from_path(file: &PathBuf) -> Option<Self> {
+    pub fn rss_entry(&self, kind: Kind, config: &Config) -> Result<atom::Entry, Box<dyn Error>> {
+        let mut url: Url = config.domain.parse()?;
+        let mut path = PathBuf::from(&config.path.as_ref().unwrap_or(&"/".to_string()));
+        let rpath = Self::get_path(&self.title, kind);
+        path.push(&rpath);
+        url.set_path(&path.to_string_lossy());
+        let author = config.author.to_atom();
+        let entry = atom::EntryBuilder::default()
+            .title(self.title.clone())
+            .id(url.to_string())
+            .updated(self.published.as_ref().unwrap().to_date_time()?)
+            .authors(vec![author])
+            .categories(self.categories(&config)?)
+            .published(self.published.as_ref().unwrap().to_date_time()?)
+            .rights(atom::Text::plain(format!(
+                "© {} by {}",
+                self.published.as_ref().unwrap().year,
+                &config.author.name
+            )))
+            .summary(self.summary.as_ref().map(|t| atom::Text::plain(t)))
+            .build();
+        Ok(entry)
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Page {
+    pub meta: Meta,
+    pub content: String,
+}
+
+impl Page {
+    pub fn from_path(file: &PathBuf) -> Option<Self> {
         match fs::read_to_string(file) {
             Ok(f) => {
                 let mut extractor = Extractor::new(&f);
@@ -126,7 +150,7 @@ impl Page {
     }
 
     fn get(title: &str, kind: Kind) -> Option<Self> {
-        let file = Self::get_path(title, kind);
+        let file = Meta::get_path(title, kind);
         Self::from_path(&file)
     }
 
@@ -174,7 +198,7 @@ impl Page {
     }
 
     pub fn publish(kind: Kind, title: &str) -> Result<(), Box<dyn Error>> {
-        let path = Self::get_path(title, kind);
+        let path = Meta::get_path(title, kind);
         if let Some(mut page) = Self::from_path(&path) {
             page.meta.publish();
             page.save(&path)?;
@@ -193,27 +217,7 @@ impl Page {
         self.meta.published.is_some()
     }
 
-    pub fn rss_entry(&self, kind: Kind, config: &Config) -> Result<atom::Entry, Box<dyn Error>> {
-        let mut url: Url = config.domain.parse()?;
-        let mut path = PathBuf::from(&config.path.as_ref().unwrap_or(&"/".to_string()));
-        let rpath = Self::get_path(&self.meta.title, kind);
-        path.push(&rpath);
-        url.set_path(&path.to_string_lossy());
-        let author = config.author.to_atom();
-        let entry = atom::EntryBuilder::default()
-            .title(self.meta.title.clone())
-            .id(url.to_string())
-            .updated(self.meta.published.as_ref().unwrap().to_date_time()?)
-            .authors(vec![author])
-            .categories(self.meta.categories(&config)?)
-            .published(self.meta.published.as_ref().unwrap().to_date_time()?)
-            .rights(atom::Text::plain(format!(
-                "© {} by {}",
-                self.meta.published.as_ref().unwrap().year,
-                &config.author.name
-            )))
-            .summary(self.meta.summary.as_ref().map(|t| atom::Text::plain(t)))
-            .build();
-        Ok(entry)
+    pub fn render(&self, path: &Path) -> Result<(), Box<dyn Error>> {
+        Ok(())
     }
 }
