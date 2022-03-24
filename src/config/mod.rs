@@ -10,6 +10,7 @@ use {
     },
     std::{
         error::Error,
+        fmt::Display,
         fs,
         io,
         path::PathBuf
@@ -22,6 +23,31 @@ pub enum Feed {
     Atom,
     Gemini,
     Both,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub enum License {
+    CcBy,
+    CcBySa,
+    CcByNc,
+    CcByNcSa,
+    CcByNd,
+    CcByNcNd,
+    Other(String),
+}
+
+impl Display for License {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            Self::CcBy => "CC BY",
+            Self::CcBySa => "CC BY-SA",
+            Self::CcByNc => "CC BY-NC",
+            Self::CcByNcSa => "CC BY-NC-SA",
+            Self::CcByNd => "CC BY-ND",
+            Self::CcByNcNd => "CC BY-NC-ND",
+            Self::Other(s) => s,
+        })
+    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -55,72 +81,11 @@ pub struct Config {
     pub path: Option<String>,
     pub entries: u8,
     pub feed: Option<Feed>,
+    pub license: Option<License>,
+    pub show_email: bool,
 }
 
 impl Config {
-    pub fn wizard() -> Result<Self, Box<dyn Error>> {
-        let mut title = String::new();
-        eprintln!("Title for this capsule:");
-        io::stdin().read_line(&mut title)?;
-        let title = title.trim_end().to_string();
-        let mut name = String::new();
-        eprintln!("Author for this capsule:");
-        io::stdin().read_line(&mut name)?;
-        let name = name.trim_end().to_string();
-        let mut email = String::new();
-        eprintln!("Author's email (optional):");
-        io::stdin().read_line(&mut email)?;
-        let email = match email.as_str() {
-            s if s.split_once('@').is_some() => Some(s.trim_end().to_string()),
-            _ => None,
-        };
-        let mut url = String::new();
-        eprintln!("Author's homepage (optional):");
-        io::stdin().read_line(&mut url)?;
-        let url = match url.as_str() {
-            s if s.split_once('@').is_some() => Some(s.trim_end().to_string()),
-            _ => None,
-        };
-        let author = Person {
-            name,
-            email,
-            url,
-        };
-        let mut domain = String::new();
-        eprintln!("Domain which will serve this capsule: ");
-        io::stdin().read_line(&mut domain)?;
-        let domain = domain.trim_end().to_string();
-        let mut path = String::new();
-        eprintln!("Path from the server root to this capsule: ");
-        io::stdin().read_line(&mut path)?;
-        let path = if path.as_str() == "\n" {
-            None
-        } else {
-            Some(path.trim_end().to_string())
-        };
-        let mut entries = String::new();
-        eprintln!("Number of posts to display links for on the index page:");
-        io::stdin().read_line(&mut entries)?;
-        let entries: u8 = entries.trim_end().parse()?;
-        let mut feed = String::new();
-        eprintln!("Type of feed to generate - 'atom', 'gemini', or 'both', or blank for none");
-        io::stdin().read_line(&mut feed)?;
-        let feed = match feed.as_str() {
-            "atom\n" => Some(Feed::Atom),
-            "gemini\n" => Some(Feed::Gemini),
-            "both\n" => Some(Feed::Both),
-            _ => None,
-        };
-        Ok(Self {
-            title,
-            author,
-            domain,
-            path,
-            entries,
-            feed,
-        })
-    }
-
     pub fn load() -> Result<Self, Box<dyn Error>> {
         let cfg_file = PathBuf::from("Config.ron");
         let cfg_file = fs::read_to_string(cfg_file).unwrap();

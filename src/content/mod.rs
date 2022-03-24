@@ -217,7 +217,7 @@ impl Page {
         self.meta.published.is_some()
     }
 
-    pub fn render(&self, path: &Path) -> Result<(), Box<dyn Error>> {
+    pub fn render(&self, cfg: &Config, path: &Path) -> Result<(), Box<dyn Error>> {
         Ok(())
     }
 }

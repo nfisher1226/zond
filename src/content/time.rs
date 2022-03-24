@@ -47,7 +47,7 @@ impl Time {
 
     fn to_rfc_3339(&self) -> String {
         format!(
-            "{}-{}-{}T{}:{}:{}Z",
+            "{}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
             self.year,
             self.month,
             self.day,
