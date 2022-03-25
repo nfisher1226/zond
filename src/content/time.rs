@@ -64,4 +64,8 @@ impl Time {
     pub fn timestamp(&self) -> Result<i64, ParseError> {
         Ok(self.to_date_time()?.timestamp())
     }
+
+    pub fn date_string(&self) -> String {
+        format!("{}-{:02}-{:02}", self.year, self.month, self.day)
+    }
 }

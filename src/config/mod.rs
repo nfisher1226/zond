@@ -100,4 +100,25 @@ impl Config {
         fs::write(&PathBuf::from("Config.ron"), ron_str)?;
         Ok(())
     }
+
+    pub fn url(&self) -> Result<Url, Box<dyn Error>> {
+        let mut path = PathBuf::new();
+        if let Some(p) = &self.path {
+            path.push(p);
+        }
+        let mut url = Url::parse(&format!("gemini://{}", &self.domain))?;
+        url.set_path(&format!("{}", path.display()));
+        Ok(url)
+    }
+
+    pub fn gemlog(&self) -> Result<Url, Box<dyn Error>> {
+        let mut path = PathBuf::new();
+        if let Some(p) = &self.path {
+            path.push(p);
+        }
+        path.push("gemlog");
+        let mut url = Url::parse(&format!("gemini://{}", &self.domain))?;
+        url.set_path(&format!("{}", path.display()));
+        Ok(url)
+    }
 }

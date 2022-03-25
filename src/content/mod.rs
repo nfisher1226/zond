@@ -218,6 +218,51 @@ impl Page {
     }
 
     pub fn render(&self, cfg: &Config, path: &Path) -> Result<(), Box<dyn Error>> {
+        let mut page = format!(
+            "# {}\n### {}\n{}\n\n",
+            self.meta.title,
+            self.meta.published.as_ref().unwrap().date_string(),
+            self.content
+        );
+        for tag in &self.meta.tags {
+            let mut path = PathBuf::new();
+            if let Some(p) = &cfg.path {
+                path.push(p)
+            }
+            path.push("tags");
+            path.push(&format!("{}.gmi", tag));
+            let mut url = Url::parse(&format!("gemini://{}", &cfg.domain))?;
+            url.set_path(&format!("{}", &path.display()));
+            let url = url.to_string();
+            page.push_str(&format!("=> {} Pages tagged {}\n", url, &tag));
+        }
+        page.push_str(&format!("\n=> {} Home\n", cfg.url()?.to_string()));
+        if let Some(p) = path.parent() {
+            if let Some(n) = p.file_name() {
+                if let Some(s) = n.to_str() {
+                    if s == "gemlog" {
+                        page.push_str(&format!("=> {} All posts\n", cfg.gemlog()?.to_string()));
+                    }
+                }
+            }
+        }
+        if let Some(license) = &cfg.license {
+            page.push_str(&format!(
+                "All content for this site is released under the {} license.\n",
+                license.to_string(),
+            ));
+        }
+        page.push_str(&format!(
+            "© {} by {}\n",
+            self.meta.published.as_ref().unwrap().year,
+            cfg.author.name,
+        ));
+        if let Some(p) = path.parent() {
+            if !p.exists() {
+                fs::create_dir_all(p)?;
+            }
+        }
+        fs::write(path, &page)?;
         Ok(())
     }
 }

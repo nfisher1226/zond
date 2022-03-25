@@ -43,6 +43,11 @@ fn items(cfg: &Config, output: &PathBuf) -> Result<(BTreeMap<i64, Meta>, HashMap
     let mut current = std::env::current_dir()?;
     current.push("content");
     let current = std::fs::canonicalize(&current)?;
+    let mut index = current.clone();
+    index.push("index.gmi");
+    let mut gemlog_index = current.clone();
+    gemlog_index.push("gemlog");
+    gemlog_index.push("index.gmi");
     for entry in WalkDir::new("content") {
         if let Ok(entry) = entry {
             let path = PathBuf::from(entry.path());
@@ -54,13 +59,15 @@ fn items(cfg: &Config, output: &PathBuf) -> Result<(BTreeMap<i64, Meta>, HashMap
                 if let Some("gmi") = s.to_str() {
                     if let Some(page) = Page::from_path(&path) {
                         if let Some(ref time) = page.meta.published {
-                            let path = path.strip_prefix(&current)?;
-                            if path.starts_with("gemlog") {
-                                page.render(cfg, &output)?;
-                                posts.insert(time.timestamp()?, page.meta);
-                            } else {
-                                page.render(cfg, &output)?;
-                                pages.insert(path.to_path_buf(), page.meta);
+                            if &path != &index && &path != &gemlog_index {
+                                let path = path.strip_prefix(&current)?;
+                                if path.starts_with("gemlog") {
+                                    page.render(cfg, &output)?;
+                                    posts.insert(time.timestamp()?, page.meta);
+                                } else {
+                                    page.render(cfg, &output)?;
+                                    pages.insert(path.to_path_buf(), page.meta);
+                                }
                             }
                         }
                     }
