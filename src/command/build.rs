@@ -16,11 +16,54 @@ use {
             HashMap,
         },
         error::Error,
-        path::PathBuf
+        io::Write,
+        path::{
+            Path,
+            PathBuf,
+        },
+        process::Stdio,
     },
     url::Url,
     walkdir::WalkDir,
 };
+
+trait ToDisk {
+    type Err;
+
+    fn to_disk(&self, path: &Path) -> Result<(), Self::Err>;
+}
+
+impl ToDisk for Feed {
+    type Err = Box<dyn Error>;
+
+    fn to_disk(&self, path: &Path) -> Result<(), Self::Err> {
+        if let Some(p) = path.parent() {
+            if !p.exists() {
+                std::fs::create_dir_all(&p)?;
+            }
+        }
+        match std::process::Command::new("xmllint")
+            .arg("-")
+            .arg("--pretty")
+            .arg("1")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn() {
+            Ok(mut child) => {
+                child.stdin.as_mut().unwrap().write_all(self.to_string().as_bytes())?;
+                let output = child.wait_with_output()?;
+                let atom = String::from_utf8_lossy(&output.stdout);
+                std::fs::write(path, &String::from(atom))?;
+            },
+            Err(_) => {
+                let atom = self.to_string();
+                let atom = atom.replace(">", ">\n");
+                std::fs::write(path, &atom);
+            },
+        }
+        Ok(())
+    }
+}
 
 pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let cfg = Config::load()?;
@@ -32,8 +75,30 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         std::fs::create_dir_all(&output)?;
     }
     let output = std::fs::canonicalize(&output)?;
-    let capsule = Capsule::init(&cfg, output)?;
-    let atom = capsule.atom(&cfg);
+    if output.exists() {
+        std::fs::remove_dir_all(&output)?;
+    }
+    let capsule = Capsule::init(&cfg, output.clone())?;
+    match &cfg.feed {
+        Some(crate::config::Feed::Atom) => {
+            let atom = capsule.atom(&cfg)?;
+            let mut dest = output.clone();
+            dest.push("gemlog");
+            dest.push("atom.xml");
+            atom.to_disk(&dest)?;
+        },
+        Some(crate::config::Feed::Gemini) => {
+        },
+        Some(crate::config::Feed::Both) => {
+            let atom = capsule.atom(&cfg)?;
+            let mut dest = output.clone();
+            dest.push("gemlog");
+            let gem = dest.clone();
+            dest.push("atom.xml");
+            atom.to_disk(&dest)?;
+        },
+        None => {},
+    }
     Ok(())
 }
 
@@ -105,7 +170,7 @@ impl Capsule {
     fn atom(&self, cfg: &Config) -> Result<atom::Feed, Box<dyn Error>> {
         let mut entries: Vec<atom::Entry> = vec![];
         for entry in self.posts.values().rev() {
-            entries.push(entry.rss_entry(Kind::Post, cfg)?);
+            entries.push(entry.atom(Kind::Post, cfg)?);
         }
         let year = self.posts
             .values()
@@ -132,5 +197,23 @@ impl Capsule {
             .entries(entries)
             .build();
         Ok(feed)
+    }
+
+    fn gemfeed(&self, cfg: &Config) -> Result<String, Box<dyn Error>> {
+        let mut page = format!("# {}\n\n", &cfg.title);
+        for entry in self.posts.values().rev() {
+            let mut url: Url = format!("gemini://{}", cfg.domain).parse()?;
+            let mut path = PathBuf::from(&cfg.path.as_ref().unwrap_or(&"/".to_string()));
+            let rpath = Meta::get_path(&entry.title, Kind::Post);
+            path.push(&rpath);
+            url.set_path(&path.to_string_lossy());
+            page.push_str(&format!(
+                "=> {} {} - {}\n",
+                url.to_string(),
+                entry.published.as_ref().unwrap().date_string(),
+                &entry.title,
+            ));
+        }
+        Ok(page)
     }
 }

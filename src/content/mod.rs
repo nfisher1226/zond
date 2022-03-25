@@ -14,7 +14,9 @@ use {
     },
     std::{
         error::Error,
+        io::Write,
         fs,
+        fs::OpenOptions,
         path::{
             Path,
             PathBuf
@@ -75,7 +77,7 @@ impl Meta {
         Ok(categories)
     }
 
-    fn get_path(title: &str, kind: Kind) -> PathBuf {
+    pub fn get_path(title: &str, kind: Kind) -> PathBuf {
         let tpath = title.trim().to_lowercase().replace(" ", "_");
         let mut file = PathBuf::from("content");
         match kind {
@@ -91,8 +93,8 @@ impl Meta {
         file
     }
 
-    pub fn rss_entry(&self, kind: Kind, config: &Config) -> Result<atom::Entry, Box<dyn Error>> {
-        let mut url: Url = config.domain.parse()?;
+    pub fn atom(&self, kind: Kind, config: &Config) -> Result<atom::Entry, Box<dyn Error>> {
+        let mut url: Url = format!("gemini://{}", config.domain).parse()?;
         let mut path = PathBuf::from(&config.path.as_ref().unwrap_or(&"/".to_string()));
         let rpath = Self::get_path(&self.title, kind);
         path.push(&rpath);
@@ -225,16 +227,57 @@ impl Page {
             self.content
         );
         for tag in &self.meta.tags {
-            let mut path = PathBuf::new();
+            let mut tpath = PathBuf::new();
             if let Some(p) = &cfg.path {
-                path.push(p)
+                tpath.push(p)
             }
-            path.push("tags");
-            path.push(&format!("{}.gmi", tag));
+            tpath.push("tag");
+            tpath.push(&format!("{}.gmi", tag));
             let mut url = Url::parse(&format!("gemini://{}", &cfg.domain))?;
-            url.set_path(&format!("{}", &path.display()));
+            let mut upath = PathBuf::from(match &cfg.path {
+                Some(p) => &p,
+                None => "/",
+            });
+            upath.push("gemlog");
+            upath.push(&PathBuf::from(path.file_name().unwrap()));
+            url.set_path(&format!("{}", &upath.to_string_lossy()));
             let url = url.to_string();
-            page.push_str(&format!("=> {} Pages tagged {}\n", url, &tag));
+            page.push_str(&format!("=> {} Pages tagged {}\n", &url, &tag));
+            if let Some(p) = path.parent() {
+                if let Some(tpath) = p.parent() {
+                    let mut tpath = tpath.join("tags");
+                    if !tpath.exists() {
+                        fs::create_dir_all(&tpath)?;
+                    }
+                    tpath.push(&tag);
+                    tpath.set_extension("gmi");
+                    if tpath.exists() {
+                        let mut fd = OpenOptions::new()
+                            .read(true)
+                            .append(true)
+                            .open(&tpath)?;
+                        fd.write_all(format!(
+                            "=> {} {}\n",
+                            &url,
+                            &self.meta.title,
+                        ).as_bytes())?;
+                    } else {
+                        let mut fd = OpenOptions::new()
+                            .read(true)
+                            .write(true)
+                            .create(true)
+                            .open(&tpath)?;
+                        fd.write_all(format!(
+                            "# {}\n\n### Pages tagged {}\n=> {} {} - {}\n",
+                            &cfg.title,
+                            &tag,
+                            &url,
+                            &self.meta.published.as_ref().unwrap().date_string(),
+                            &self.meta.title,
+                        ).as_bytes())?;
+                    }
+                }
+            }
         }
         page.push_str(&format!("\n=> {} Home\n", cfg.url()?.to_string()));
         if let Some(p) = path.parent() {
