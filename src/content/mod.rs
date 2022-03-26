@@ -226,7 +226,7 @@ impl Page {
             self.meta.published.as_ref().unwrap().date_string(),
             self.content
         );
-        page.push_str(&format!("\n=> {} Home\n", cfg.url()?.to_string()));
+        page.push_str(&format!("=> {} Home\n", cfg.url()?.to_string()));
         if let Some(p) = path.parent() {
             if let Some(n) = p.file_name() {
                 if let Some(s) = n.to_str() {
@@ -247,6 +247,14 @@ impl Page {
             self.meta.published.as_ref().unwrap().year,
             cfg.author.name,
         ));
+        if cfg.show_email {
+            if let Some(ref email) = cfg.author.email {
+                page.push_str(&format!(
+                    "=> mailto:{} Contact\n",
+                    email,
+                ));
+            }
+        }
         if let Some(p) = path.parent() {
             if !p.exists() {
                 fs::create_dir_all(p)?;

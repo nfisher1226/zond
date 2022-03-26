@@ -112,13 +112,7 @@ impl Config {
     }
 
     pub fn gemlog(&self) -> Result<Url, Box<dyn Error>> {
-        let mut path = PathBuf::new();
-        if let Some(p) = &self.path {
-            path.push(p);
-        }
-        path.push("gemlog");
-        let mut url = Url::parse(&format!("gemini://{}", &self.domain))?;
-        url.set_path(&format!("{}", path.display()));
-        Ok(url)
+        let url = self.url()?;
+        Ok(url.join("gemlog")?)
     }
 }

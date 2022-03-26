@@ -43,14 +43,8 @@ impl Link {
     }
 
     pub fn get(origin: &Path, cfg: &Config, meta: &Meta) -> Result<Self, Box<dyn Error>> {
-        let url = format!("gemini://{}", &cfg.domain);
-        let mut url = Url::parse(&url)?;
-        let mut path = match cfg.path.as_ref() {
-            Some(p) => PathBuf::from(&p),
-            None => PathBuf::from("/"),
-        };
-        path.push(origin);
-        url.set_path(&path.to_string_lossy());
+        let mut url = cfg.url()?;
+        url.set_path(&origin.to_string_lossy());
         Ok(Self {
             url: url.to_string(),
             display: format!(
@@ -265,7 +259,13 @@ impl Capsule {
     }
 
     fn render_tags(&self, cfg: &Config, output: &Path) -> Result<(), Box<dyn Error>> {
+        let mut index = PathBuf::from(output);
+        index.push(PathBuf::from("tags"));
+        index.push(PathBuf::from("index.gmi"));
+        let mut index_page = format!("# {}\n\n### All tags\n", &cfg.title);
+        let home = cfg.url()?;
         for (tag, links) in &self.tags {
+            index_page.push_str(&format!("=> {}.gmi {}\n", &tag, &tag));
             let mut dest = PathBuf::from(output);
             dest.push(&PathBuf::from("tags"));
             if !dest.exists() {
@@ -277,7 +277,9 @@ impl Capsule {
             for link in links {
                 page.push_str(&link.to_gmi());
             }
-            page.push_str(&format!("\n=> gemini://{} Home\n", &cfg.domain));
+            let tlink = home.join("tags")?;
+            page.push_str(&format!("\n=> {} All tags\n", tlink.to_string()));
+            page.push_str(&format!("=> {} Home\n", home.to_string()));
             if let Some(ref license) = cfg.license {
                 page.push_str(&format!(
                     "All content for this site is release under the {} license.\n",
@@ -285,8 +287,33 @@ impl Capsule {
                 ));
             }
             page.push_str(&format!("© {} by {}\n", Utc::now().date().year(), &cfg.author.name));
+            if cfg.show_email {
+                if let Some(ref email) = cfg.author.email {
+                    page.push_str(&format!(
+                        "=> mailto:{} Contact\n",
+                        email,
+                    ));
+                }
+            }
             std::fs::write(&dest, &page.as_bytes())?;
         }
+        index_page.push_str(&format!("\n=> {} Home\n", home.to_string()));
+        if let Some(ref license) = cfg.license {
+            index_page.push_str(&format!(
+                "All content for this site is release under the {} license.\n",
+                license.to_string(),
+            ));
+        }
+        index_page.push_str(&format!("© {} by {}\n", Utc::now().date().year(), &cfg.author.name));
+        if cfg.show_email {
+            if let Some(ref email) = cfg.author.email {
+                index_page.push_str(&format!(
+                    "=> mailto:{} Contact\n",
+                    email,
+                ));
+            }
+        }
+        std::fs::write(&index, &index_page.as_bytes())?;
         Ok(())
     }
 }
