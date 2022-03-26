@@ -226,59 +226,6 @@ impl Page {
             self.meta.published.as_ref().unwrap().date_string(),
             self.content
         );
-        for tag in &self.meta.tags {
-            let mut tpath = PathBuf::new();
-            if let Some(p) = &cfg.path {
-                tpath.push(p)
-            }
-            tpath.push("tag");
-            tpath.push(&format!("{}.gmi", tag));
-            let mut url = Url::parse(&format!("gemini://{}", &cfg.domain))?;
-            let mut upath = PathBuf::from(match &cfg.path {
-                Some(p) => &p,
-                None => "/",
-            });
-            upath.push("gemlog");
-            upath.push(&PathBuf::from(path.file_name().unwrap()));
-            url.set_path(&format!("{}", &upath.to_string_lossy()));
-            let url = url.to_string();
-            page.push_str(&format!("=> {} Pages tagged {}\n", &url, &tag));
-            if let Some(p) = path.parent() {
-                if let Some(tpath) = p.parent() {
-                    let mut tpath = tpath.join("tags");
-                    if !tpath.exists() {
-                        fs::create_dir_all(&tpath)?;
-                    }
-                    tpath.push(&tag);
-                    tpath.set_extension("gmi");
-                    if tpath.exists() {
-                        let mut fd = OpenOptions::new()
-                            .read(true)
-                            .append(true)
-                            .open(&tpath)?;
-                        fd.write_all(format!(
-                            "=> {} {}\n",
-                            &url,
-                            &self.meta.title,
-                        ).as_bytes())?;
-                    } else {
-                        let mut fd = OpenOptions::new()
-                            .read(true)
-                            .write(true)
-                            .create(true)
-                            .open(&tpath)?;
-                        fd.write_all(format!(
-                            "# {}\n\n### Pages tagged {}\n=> {} {} - {}\n",
-                            &cfg.title,
-                            &tag,
-                            &url,
-                            &self.meta.published.as_ref().unwrap().date_string(),
-                            &self.meta.title,
-                        ).as_bytes())?;
-                    }
-                }
-            }
-        }
         page.push_str(&format!("\n=> {} Home\n", cfg.url()?.to_string()));
         if let Some(p) = path.parent() {
             if let Some(n) = p.file_name() {

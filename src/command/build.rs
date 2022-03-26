@@ -1,6 +1,10 @@
 use {
     atom_syndication as atom,
     atom_syndication::Feed,
+    chrono::{
+        Datelike,
+        Utc,
+    },
     clap::ArgMatches,
     crate::{
         config::Config,
@@ -26,6 +30,37 @@ use {
     url::Url,
     walkdir::WalkDir,
 };
+
+#[derive(Clone)]
+pub struct Link {
+    pub url: String,
+    pub display: String,
+}
+
+impl Link {
+    pub fn to_gmi(&self) -> String {
+        format!("=> {} {}\n", &self.url, &self.display)
+    }
+
+    pub fn get(origin: &Path, cfg: &Config, meta: &Meta) -> Result<Self, Box<dyn Error>> {
+        let url = format!("gemini://{}", &cfg.domain);
+        let mut url = Url::parse(&url)?;
+        let mut path = match cfg.path.as_ref() {
+            Some(p) => PathBuf::from(&p),
+            None => PathBuf::from("/"),
+        };
+        path.push(origin);
+        url.set_path(&path.to_string_lossy());
+        Ok(Self {
+            url: url.to_string(),
+            display: format!(
+                "{} - {}",
+                meta.published.as_ref().unwrap().date_string(),
+                &meta.title,
+            )
+        })
+    }
+}
 
 trait ToDisk {
     type Err;
@@ -58,7 +93,7 @@ impl ToDisk for Feed {
             Err(_) => {
                 let atom = self.to_string();
                 let atom = atom.replace(">", ">\n");
-                std::fs::write(path, &atom);
+                std::fs::write(path, &atom)?;
             },
         }
         Ok(())
@@ -99,12 +134,14 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         },
         None => {},
     }
+    capsule.render_tags(&cfg, &output)?;
     Ok(())
 }
 
-fn items(cfg: &Config, output: &PathBuf) -> Result<(BTreeMap<i64, Meta>, HashMap<PathBuf, Meta>), Box<dyn Error>> {
+fn items(cfg: &Config, output: &PathBuf) -> Result<(BTreeMap<i64, Meta>, HashMap<PathBuf, Meta>, HashMap<String, Vec<Link>>), Box<dyn Error>> {
     let mut posts: BTreeMap<i64, Meta> = BTreeMap::new();
     let mut pages: HashMap<PathBuf, Meta> = HashMap::new();
+    let mut tags: HashMap<String, Vec<Link>> = HashMap::new();
     let mut current = std::env::current_dir()?;
     current.push("content");
     let current = std::fs::canonicalize(&current)?;
@@ -126,6 +163,14 @@ fn items(cfg: &Config, output: &PathBuf) -> Result<(BTreeMap<i64, Meta>, HashMap
                         if let Some(ref time) = page.meta.published {
                             if &path != &index && &path != &gemlog_index {
                                 let path = path.strip_prefix(&current)?;
+                                let link = Link::get(&path, cfg, &page.meta)?;
+                                for tag in &page.meta.tags {
+                                    if let Some(t) = tags.get_mut(tag) {
+                                        t.push(link.clone());
+                                    } else {
+                                        tags.insert(tag.to_string(), vec![link.clone()]);
+                                    }
+                                }
                                 if path.starts_with("gemlog") {
                                     page.render(cfg, &output)?;
                                     posts.insert(time.timestamp()?, page.meta);
@@ -148,22 +193,24 @@ fn items(cfg: &Config, output: &PathBuf) -> Result<(BTreeMap<i64, Meta>, HashMap
             }
         }
     }
-    Ok((posts, pages))
+    Ok((posts, pages, tags))
 }
 
 struct Capsule {
     path: PathBuf,
     posts: BTreeMap<i64, Meta>,
     pages: HashMap<PathBuf, Meta>,
+    tags: HashMap<String, Vec<Link>>,
 }
 
 impl Capsule {
     fn init(cfg: &Config, path: PathBuf) -> Result<Self, Box<dyn Error>> {
-        let (posts, pages) = items(cfg, &path)?;
+        let (posts, pages, tags) = items(cfg, &path)?;
         Ok(Self {
             path,
             posts,
             pages,
+            tags,
         })
     }
 
@@ -215,5 +262,31 @@ impl Capsule {
             ));
         }
         Ok(page)
+    }
+
+    fn render_tags(&self, cfg: &Config, output: &Path) -> Result<(), Box<dyn Error>> {
+        for (tag, links) in &self.tags {
+            let mut dest = PathBuf::from(output);
+            dest.push(&PathBuf::from("tags"));
+            if !dest.exists() {
+                std::fs::create_dir_all(&dest)?;
+            }
+            dest.push(&PathBuf::from(&tag));
+            dest.set_extension("gmi");
+            let mut page = format!("# {}\n\n### Pages tagged {}\n", &cfg.title, &tag);
+            for link in links {
+                page.push_str(&link.to_gmi());
+            }
+            page.push_str(&format!("\n=> gemini://{} Home\n", &cfg.domain));
+            if let Some(ref license) = cfg.license {
+                page.push_str(&format!(
+                    "All content for this site is release under the {} license.\n",
+                    license.to_string(),
+                ));
+            }
+            page.push_str(&format!("© {} by {}\n", Utc::now().date().year(), &cfg.author.name));
+            std::fs::write(&dest, &page.as_bytes())?;
+        }
+        Ok(())
     }
 }
