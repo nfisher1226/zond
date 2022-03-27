@@ -130,6 +130,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     }
     capsule.render_tags(&cfg, &output)?;
     capsule.render_index(&cfg, &output)?;
+    capsule.render_gemlog_index(&cfg, &output)?;
     Ok(())
 }
 
@@ -269,7 +270,6 @@ impl Capsule {
         index.push(PathBuf::from("tags"));
         index.push(PathBuf::from("index.gmi"));
         let mut index_page = format!("# {}\n\n### All tags\n", &cfg.title);
-        let home = cfg.url()?;
         for (tag, links) in &self.tags {
             index_page.push_str(&format!("=> {}.gmi {}\n", &tag, &tag));
             let mut dest = PathBuf::from(output);
@@ -283,9 +283,8 @@ impl Capsule {
             for link in links {
                 page.push_str(&link.to_gmi());
             }
-            let tlink = home.join("tags")?;
-            page.push_str(&format!("\n=> {} All tags\n", tlink.to_string()));
-            page.push_str(&format!("=> {} Home\n", home.to_string()));
+            page.push_str("\n=> . All tags\n");
+            page.push_str("=> .. Home\n");
             if let Some(ref license) = cfg.license {
                 page.push_str(&format!(
                     "All content for this site is release under the {} license.\n",
@@ -303,7 +302,7 @@ impl Capsule {
             }
             std::fs::write(&dest, &page.as_bytes())?;
         }
-        index_page.push_str(&format!("\n=> {} Home\n", home.to_string()));
+        index_page.push_str("\n=> .. Home\n");
         if let Some(ref license) = cfg.license {
             index_page.push_str(&format!(
                 "All content for this site is release under the {} license.\n",
@@ -357,6 +356,45 @@ impl Capsule {
                 }
             }
             let mut index = PathBuf::from(output);
+            index.push(PathBuf::from("index.gmi"));
+            std::fs::write(&index, &content.as_bytes())?;
+        }
+        Ok(())
+    }
+
+    fn render_gemlog_index(&self, cfg: &Config, output: &Path) -> Result<(), Box<dyn Error>> {
+        let origin = PathBuf::from("content/gemlog/index.gmi");
+        if let Some(page) = Page::from_path(&origin) {
+            let mut content = format!("# {}\n\n", &cfg.title);
+            content.push_str(&page.content);
+            content.push_str("\n\n### Gemlog posts\n");
+            for post in self.posts.values().rev() {
+                let path = Meta::get_path(&post.title, Kind::Post);
+                content.push_str(&format!(
+                    "=> {} {} - {}\n",
+                    path.file_name().unwrap().to_str().unwrap(),
+                    post.published.as_ref().unwrap().date_string(),
+                    &post.title,
+                ));
+            }
+            content.push_str("\n=> ../tags tags\n=> .. Home\n");
+            if let Some(ref license) = cfg.license {
+                content.push_str(&format!(
+                    "All content for this site is release under the {} license.\n",
+                    license.to_string(),
+                ));
+            }
+            content.push_str(&format!("© {} by {}\n", Utc::now().date().year(), &cfg.author.name));
+            if cfg.show_email {
+                if let Some(ref email) = cfg.author.email {
+                    content.push_str(&format!(
+                        "=> mailto:{} Contact\n",
+                        email,
+                    ));
+                }
+            }
+            let mut index = PathBuf::from(output);
+            index.push(PathBuf::from("gemlog"));
             index.push(PathBuf::from("index.gmi"));
             std::fs::write(&index, &content.as_bytes())?;
         }
