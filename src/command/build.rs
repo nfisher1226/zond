@@ -129,6 +129,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         None => {},
     }
     capsule.render_tags(&cfg, &output)?;
+    capsule.render_index(&cfg, &output)?;
     Ok(())
 }
 
@@ -149,6 +150,11 @@ fn items(cfg: &Config, output: &PathBuf) -> Result<(BTreeMap<i64, Meta>, HashMap
             let path = PathBuf::from(entry.path());
             let path = std::fs::canonicalize(&path)?;
             let last = path.strip_prefix(&current)?;
+            if let Some(n) = last.to_str() {
+                if n == "index.gmi" || n == "gemlog/index.gmi" {
+                    continue;
+                }
+            }
             let mut output = output.clone();
             output.push(&last);
             if let Some(s) = path.extension() {
@@ -156,7 +162,7 @@ fn items(cfg: &Config, output: &PathBuf) -> Result<(BTreeMap<i64, Meta>, HashMap
                     if let Some(page) = Page::from_path(&path) {
                         if let Some(ref time) = page.meta.published {
                             if &path != &index && &path != &gemlog_index {
-                                let path = path.strip_prefix(&current)?;
+                                let depth = entry.depth();
                                 let link = Link::get(&path, cfg, &page.meta)?;
                                 for tag in &page.meta.tags {
                                     if let Some(t) = tags.get_mut(tag) {
@@ -165,12 +171,12 @@ fn items(cfg: &Config, output: &PathBuf) -> Result<(BTreeMap<i64, Meta>, HashMap
                                         tags.insert(tag.to_string(), vec![link.clone()]);
                                     }
                                 }
-                                if path.starts_with("gemlog") {
-                                    page.render(cfg, &output)?;
+                                if last.starts_with("gemlog") {
+                                    page.render(cfg, &output, depth)?;
                                     posts.insert(time.timestamp()?, page.meta);
                                 } else {
-                                    page.render(cfg, &output)?;
-                                    pages.insert(path.to_path_buf(), page.meta);
+                                    page.render(cfg, &output, depth)?;
+                                    pages.insert(last.to_path_buf(), page.meta);
                                 }
                             }
                         }
@@ -314,6 +320,46 @@ impl Capsule {
             }
         }
         std::fs::write(&index, &index_page.as_bytes())?;
+        Ok(())
+    }
+
+    fn render_index(&self, cfg: &Config, output: &Path) -> Result<(), Box<dyn Error>> {
+        let origin = PathBuf::from("content/index.gmi");
+        if let Some(page) = Page::from_path(&origin) {
+            let mut content = format!("# {}\n\n", &cfg.title);
+            content.push_str(&page.content);
+            let mut posts = String::from("### Gemlog posts\n");
+            let num = std::cmp::min(cfg.entries, self.posts.len());
+            for post in self.posts.values().rev().take(num) {
+                let path = Meta::get_path(&post.title, Kind::Post);
+                posts.push_str(&format!(
+                    "=> gemlog/{} {} - {}\n",
+                    path.file_name().unwrap().to_str().unwrap(),
+                    post.published.as_ref().unwrap().date_string(),
+                    &post.title,
+                ));
+            }
+            posts.push_str("=> gemlog/ All posts");
+            let mut content = content.replace("{% posts %}", &posts);
+            if let Some(ref license) = cfg.license {
+                content.push_str(&format!(
+                    "\n\nAll content for this site is release under the {} license.\n",
+                    license.to_string(),
+                ));
+            }
+            content.push_str(&format!("© {} by {}\n", Utc::now().date().year(), &cfg.author.name));
+            if cfg.show_email {
+                if let Some(ref email) = cfg.author.email {
+                    content.push_str(&format!(
+                        "=> mailto:{} Contact\n",
+                        email,
+                    ));
+                }
+            }
+            let mut index = PathBuf::from(output);
+            index.push(PathBuf::from("index.gmi"));
+            std::fs::write(&index, &content.as_bytes())?;
+        }
         Ok(())
     }
 }

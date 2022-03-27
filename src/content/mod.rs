@@ -219,19 +219,26 @@ impl Page {
         self.meta.published.is_some()
     }
 
-    pub fn render(&self, cfg: &Config, path: &Path) -> Result<(), Box<dyn Error>> {
+    pub fn render(&self, cfg: &Config, path: &Path, depth: usize) -> Result<(), Box<dyn Error>> {
         let mut page = format!(
             "# {}\n### {}\n{}\n\n",
             self.meta.title,
             self.meta.published.as_ref().unwrap().date_string(),
             self.content
         );
-        page.push_str(&format!("=> {} Home\n", cfg.url()?.to_string()));
+        page.push_str(&format!(
+            "=> {} Home\n",
+            match depth {
+                1 => ".".to_string(),
+                2 => "..".to_string(),
+                _ => cfg.url()?.to_string(),
+            }
+        ));
         if let Some(p) = path.parent() {
             if let Some(n) = p.file_name() {
                 if let Some(s) = n.to_str() {
                     if s == "gemlog" {
-                        page.push_str(&format!("=> {} All posts\n", cfg.gemlog()?.to_string()));
+                        page.push_str("=> . All posts\n");
                     }
                 }
             }

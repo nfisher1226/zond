@@ -79,7 +79,7 @@ pub struct Config {
     pub author: Person,
     pub domain: String,
     pub path: Option<String>,
-    pub entries: u8,
+    pub entries: usize,
     pub feed: Option<Feed>,
     pub license: Option<License>,
     pub show_email: bool,
