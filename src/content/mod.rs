@@ -64,7 +64,7 @@ impl Meta {
             };
             path.push(&PathBuf::from("tags"));
             path.push(&PathBuf::from(&tag));
-            path.set_extension(".gmi");
+            path.set_extension("gmi");
             let path = path.to_string_lossy();
             url.set_path(&path);
             let cat = atom::Category {

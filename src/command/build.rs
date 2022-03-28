@@ -117,6 +117,11 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
             atom.to_disk(&dest)?;
         },
         Some(crate::config::Feed::Gemini) => {
+            let feed = capsule.gemfeed(&cfg)?;
+            let mut dest = output.clone();
+            dest.push("gemlog");
+            dest.push("feed.gmi");
+            std::fs::write(&dest, &feed)?;
         },
         Some(crate::config::Feed::Both) => {
             let atom = capsule.atom(&cfg)?;
@@ -125,6 +130,11 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
             let gem = dest.clone();
             dest.push("atom.xml");
             atom.to_disk(&dest)?;
+            let feed = capsule.gemfeed(&cfg)?;
+            let mut dest = output.clone();
+            dest.push("gemlog");
+            dest.push("feed.gmi");
+            std::fs::write(&dest, &feed)?;
         },
         None => {},
     }
