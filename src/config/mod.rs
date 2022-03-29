@@ -109,9 +109,4 @@ impl Config {
         url.set_path(&format!("{}", path.display()));
         Ok(url)
     }
-
-    pub fn gemlog(&self) -> Result<Url, Box<dyn Error>> {
-        let url = self.url()?;
-        Ok(url.join("gemlog")?)
-    }
 }

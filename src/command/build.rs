@@ -9,9 +9,14 @@ use {
     crate::{
         config::Config,
         content::{
+            index::Index,
             Kind,
             Meta,
             Page,
+        },
+        traits::{
+            ToDisk,
+            GetPath,
         },
     },
     std::{
@@ -20,12 +25,10 @@ use {
             HashMap,
         },
         error::Error,
-        io::Write,
         path::{
             Path,
             PathBuf,
         },
-        process::Stdio,
     },
     url::Url,
     walkdir::WalkDir,
@@ -56,41 +59,23 @@ impl Link {
     }
 }
 
-trait ToDisk {
-    type Err;
+#[derive(Clone)]
+struct GemFeed(String);
 
-    fn to_disk(&self, path: &Path) -> Result<(), Self::Err>;
-}
-
-impl ToDisk for Feed {
+impl ToDisk for GemFeed {
     type Err = Box<dyn Error>;
 
     fn to_disk(&self, path: &Path) -> Result<(), Self::Err> {
-        if let Some(p) = path.parent() {
-            if !p.exists() {
-                std::fs::create_dir_all(&p)?;
-            }
-        }
-        match std::process::Command::new("xmllint")
-            .arg("-")
-            .arg("--pretty")
-            .arg("1")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn() {
-            Ok(mut child) => {
-                child.stdin.as_mut().unwrap().write_all(self.to_string().as_bytes())?;
-                let output = child.wait_with_output()?;
-                let atom = String::from_utf8_lossy(&output.stdout);
-                std::fs::write(path, &String::from(atom))?;
-            },
-            Err(_) => {
-                let atom = self.to_string();
-                let atom = atom.replace(">", ">\n");
-                std::fs::write(path, &atom)?;
-            },
-        }
+        std::fs::write(path, &self.0)?;
         Ok(())
+    }
+}
+
+impl GetPath for GemFeed {
+    fn get_path(root: &mut PathBuf, _subdir: Option<&Path>) -> PathBuf {
+        root.push("gemlog");
+        root.push("feed.gmi");
+        root.to_path_buf()
     }
 }
 
@@ -103,7 +88,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     if !output.exists() {
         std::fs::create_dir_all(&output)?;
     }
-    let output = std::fs::canonicalize(&output)?;
+    let mut output = std::fs::canonicalize(&output)?;
     if output.exists() {
         std::fs::remove_dir_all(&output)?;
     }
@@ -111,29 +96,21 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     match &cfg.feed {
         Some(crate::config::Feed::Atom) => {
             let atom = capsule.atom(&cfg)?;
-            let mut dest = output.clone();
-            dest.push("gemlog");
-            dest.push("atom.xml");
+            let dest = Feed::get_path(&mut output, None);
             atom.to_disk(&dest)?;
         },
         Some(crate::config::Feed::Gemini) => {
             let feed = capsule.gemfeed(&cfg)?;
-            let mut dest = output.clone();
-            dest.push("gemlog");
-            dest.push("feed.gmi");
-            std::fs::write(&dest, &feed)?;
+            let dest = GemFeed::get_path(&mut output, None);
+            feed.to_disk(&dest)?;
         },
         Some(crate::config::Feed::Both) => {
             let atom = capsule.atom(&cfg)?;
-            let mut dest = output.clone();
-            dest.push("gemlog");
-            dest.push("atom.xml");
+            let dest = Feed::get_path(&mut output.clone(), None);
             atom.to_disk(&dest)?;
             let feed = capsule.gemfeed(&cfg)?;
-            let mut dest = output.clone();
-            dest.push("gemlog");
-            dest.push("feed.gmi");
-            std::fs::write(&dest, &feed)?;
+            let dest = GemFeed::get_path(&mut output.clone(), None);
+            feed.to_disk(&dest)?;
         },
         None => {},
     }
@@ -254,7 +231,7 @@ impl Capsule {
         Ok(feed)
     }
 
-    fn gemfeed(&self, cfg: &Config) -> Result<String, Box<dyn Error>> {
+    fn gemfeed(&self, cfg: &Config) -> Result<GemFeed, Box<dyn Error>> {
         let mut page = format!("# {}\n\n", &cfg.title);
         for entry in self.posts.values().rev() {
             let mut url: Url = format!("gemini://{}", cfg.domain).parse()?;
@@ -269,13 +246,11 @@ impl Capsule {
                 &entry.title,
             ));
         }
-        Ok(page)
+        Ok(GemFeed(page))
     }
 
     fn render_tags(&self, cfg: &Config, output: &Path) -> Result<(), Box<dyn Error>> {
-        let mut index = PathBuf::from(output);
-        index.push(PathBuf::from("tags"));
-        index.push(PathBuf::from("index.gmi"));
+        let index_path = Index::get_path(&mut output.to_path_buf(), Some(&PathBuf::from("tags")));
         let mut index_page = format!("# {}\n\n### All tags\n", &cfg.title);
         for (tag, links) in &self.tags {
             index_page.push_str(&format!("=> {}.gmi {}\n", &tag, &tag));
@@ -325,7 +300,7 @@ impl Capsule {
                 ));
             }
         }
-        std::fs::write(&index, &index_page.as_bytes())?;
+        Index(index_page).to_disk(&index_path)?;
         Ok(())
     }
 
@@ -347,6 +322,9 @@ impl Capsule {
             }
             posts.push_str("=> gemlog/ All posts");
             let mut content = content.replace("{% posts %}", &posts);
+            // TODO - index these
+            for (_path,_page) in &self.pages {
+            }
             if let Some(ref license) = cfg.license {
                 content.push_str(&format!(
                     "\n\nAll content for this site is release under the {} license.\n",
@@ -362,9 +340,8 @@ impl Capsule {
                     ));
                 }
             }
-            let mut index = PathBuf::from(output);
-            index.push(PathBuf::from("index.gmi"));
-            std::fs::write(&index, &content.as_bytes())?;
+            let path = Index::get_path(&mut PathBuf::from(output), None);
+            Index(content).to_disk(&path)?;
         }
         Ok(())
     }
@@ -400,10 +377,8 @@ impl Capsule {
                     ));
                 }
             }
-            let mut index = PathBuf::from(output);
-            index.push(PathBuf::from("gemlog"));
-            index.push(PathBuf::from("index.gmi"));
-            std::fs::write(&index, &content.as_bytes())?;
+            let path = Index::get_path(&mut PathBuf::from(output), Some(&PathBuf::from("gemlog")));
+            Index(content).to_disk(&path)?;
         }
         Ok(())
     }

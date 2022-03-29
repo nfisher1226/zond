@@ -17,34 +17,31 @@ fn main() -> Result<(), Error> {
         Some(outdir) => outdir,
     };
     let mut cmd = build();
-    let path = generate_to(
+    let _path = generate_to(
         shells::Bash,
         &mut cmd,
         "vostok",
         outdir.clone(),
     )?;
-    println!("cargo:warning=bash completion file is generated: {:?}", path);
-    let path = generate_to(
+    let _path = generate_to(
         shells::Zsh,
         &mut cmd,
         "vostok",
         outdir.clone(),
     )?;
-    println!("cargo:warning=zsh completion file is generated: {:?}", path);
-    let path = generate_to(
+    let _path = generate_to(
         shells::Fish,
         &mut cmd,
         "vostok",
         outdir.clone(),
     )?;
-    println!("cargo:warning=fish completion file is generated: {:?}", path);
-    let path = generate_to(
+    let _path = generate_to(
         shells::PowerShell,
         &mut cmd,
         "vostok",
-        outdir,
+        outdir.clone(),
     )?;
-    println!("cargo:warning=pwsh completion file is generated: {:?}", path);
+    println!("cargo:warning=Shell completions have been saved in: {:?}", outdir);
     println!("cargo:rerun-if-changed=build.rs");
     Ok(())
 }

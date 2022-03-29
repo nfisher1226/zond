@@ -1,8 +1,12 @@
+pub mod index;
 mod time;
 
 use {
     atom_syndication as atom,
-    crate::config::Config,
+    crate::{
+        config::Config,
+        traits::ToDisk,
+    },
     extract_frontmatter::Extractor,
     ron::ser::{
         to_string_pretty,
@@ -41,15 +45,6 @@ pub struct Meta {
 }
 
 impl Meta {
-    /*fn new(title: &str, summary: Option<&str>, tags: Vec<String>) -> Self {
-        Self {
-            title: title.to_string(),
-            summary: summary.map(|x| x.to_string()),
-            published: None,
-            tags,
-        }
-    }*/
-
     fn publish(&mut self) {
         self.published = Some(Time::now());
     }
@@ -128,6 +123,18 @@ pub struct Page {
     pub content: String,
 }
 
+impl ToDisk for Page {
+    type Err = Box<dyn Error>;
+
+    fn to_disk(&self, path: &Path) -> Result<(), Self::Err> {
+        let mut contents = to_string_pretty(&self.meta, PrettyConfig::new())?;
+        contents.push_str("\n---\n");
+        contents.push_str(&self.content);
+        fs::write(path, contents)?;
+        Ok(())
+    }
+}
+
 impl Page {
     pub fn from_path(file: &PathBuf) -> Option<Self> {
         match fs::read_to_string(file) {
@@ -153,19 +160,6 @@ impl Page {
                 None
             }
         }
-    }
-
-    /*fn get(title: &str, kind: Kind) -> Option<Self> {
-        let file = Meta::get_path(title, kind);
-        Self::from_path(&file)
-    }*/
-
-    fn save(&self, file: &PathBuf) -> Result<(), Box<dyn Error>> {
-        let mut contents = to_string_pretty(&self.meta, PrettyConfig::new())?;
-        contents.push_str("\n---\n");
-        contents.push_str(&self.content);
-        fs::write(file, contents)?;
-        Ok(())
     }
 
     pub fn create(
@@ -204,7 +198,7 @@ impl Page {
             meta,
             content: String::new(),
         };
-        page.save(&file)?;
+        page.to_disk(&file)?;
         Ok(file)
     }
 
@@ -212,7 +206,7 @@ impl Page {
         let path = Meta::get_path(title, kind);
         if let Some(mut page) = Self::from_path(&path) {
             page.meta.publish();
-            page.save(&path)?;
+            page.to_disk(&path)?;
         }
         Ok(())
     }
@@ -229,17 +223,6 @@ impl Page {
         }
         Ok(())
     }
-
-    pub fn timestamp(&self) -> Result<i64, Box<dyn Error>> {
-        match &self.meta.published {
-            Some(time) => Ok(time.timestamp()?),
-            None => Err(String::from("Not published").into()),
-        }
-    }
-
-    /*fn published(&self) -> bool {
-        self.meta.published.is_some()
-    }*/
 
     pub fn render(&self, cfg: &Config, path: &Path, depth: usize) -> Result<(), Box<dyn Error>> {
         let mut page = format!(
