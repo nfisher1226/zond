@@ -8,8 +8,9 @@ use {
 };
 
 #[derive(Clone, Debug, Deserialize, PartialEq, PartialOrd, Serialize)]
+/// Conversion middleman because chrono::DateTime does not support serde
 pub struct Time {
-    pub year: i32,
+    year: i32,
     month: u32,
     day: u32,
     hour: u32,
@@ -43,6 +44,10 @@ impl Time {
             minute: utc.time().minute(),
             second: utc.time().second(),
         }
+    }
+
+    pub fn year(&self) -> i32 {
+        self.year
     }
 
     fn to_rfc_3339(&self) -> String {

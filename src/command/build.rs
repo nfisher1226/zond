@@ -62,6 +62,10 @@ impl Link {
 #[derive(Clone)]
 struct GemFeed(String);
 
+type Posts = BTreeMap<i64, Meta>;
+type Tags = HashMap<String, Vec<Link>>;
+type Items = (Posts, Tags);
+
 impl ToDisk for GemFeed {
     type Err = Box<dyn Error>;
 
@@ -72,10 +76,11 @@ impl ToDisk for GemFeed {
 }
 
 impl GetPath for GemFeed {
-    fn get_path(root: &mut PathBuf, _subdir: Option<&Path>) -> PathBuf {
-        root.push("gemlog");
-        root.push("feed.gmi");
-        root.to_path_buf()
+    fn get_path(root: &Path, _subdir: Option<&Path>) -> PathBuf {
+        let mut path = root.to_path_buf();
+        path.push("gemlog");
+        path.push("feed.gmi");
+        path
     }
 }
 
@@ -88,42 +93,45 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     if !output.exists() {
         std::fs::create_dir_all(&output)?;
     }
-    let mut output = std::fs::canonicalize(&output)?;
+    let output = std::fs::canonicalize(&output)?;
     if output.exists() {
         std::fs::remove_dir_all(&output)?;
     }
-    let capsule = Capsule::init(&cfg, output.clone())?;
+    let capsule = Capsule::init(&cfg, &output)?;
     match &cfg.feed {
         Some(crate::config::Feed::Atom) => {
             let atom = capsule.atom(&cfg)?;
-            let dest = Feed::get_path(&mut output, None);
+            let dest = Feed::get_path(&output, None);
             atom.to_disk(&dest)?;
         },
         Some(crate::config::Feed::Gemini) => {
             let feed = capsule.gemfeed(&cfg)?;
-            let dest = GemFeed::get_path(&mut output, None);
+            let dest = GemFeed::get_path(&output, None);
             feed.to_disk(&dest)?;
         },
         Some(crate::config::Feed::Both) => {
             let atom = capsule.atom(&cfg)?;
-            let dest = Feed::get_path(&mut output.clone(), None);
+            let dest = Feed::get_path(&output, None);
             atom.to_disk(&dest)?;
             let feed = capsule.gemfeed(&cfg)?;
-            let dest = GemFeed::get_path(&mut output.clone(), None);
+            let dest = GemFeed::get_path(&output, None);
             feed.to_disk(&dest)?;
         },
         None => {},
     }
     capsule.render_tags(&cfg, &output)?;
+    //let indexes = capsule.indexes();
+    //println!("{:?}", indexes);
     capsule.render_index(&cfg, &output)?;
     capsule.render_gemlog_index(&cfg, &output)?;
     Ok(())
 }
 
-fn items(cfg: &Config, output: &PathBuf) -> Result<(BTreeMap<i64, Meta>, HashMap<PathBuf, Meta>, HashMap<String, Vec<Link>>), Box<dyn Error>> {
-    let mut posts: BTreeMap<i64, Meta> = BTreeMap::new();
-    let mut pages: HashMap<PathBuf, Meta> = HashMap::new();
-    let mut tags: HashMap<String, Vec<Link>> = HashMap::new();
+//fn items(cfg: &Config, output: &PathBuf) -> Result<(BTreeMap<i64, Meta>, HashMap<PathBuf, Meta>, HashMap<String, Vec<Link>>), Box<dyn Error>> {
+fn items(cfg: &Config, output: &Path) -> Result<Items, Box<dyn Error>> {
+    let mut posts: Posts = BTreeMap::new();
+    //let mut pages: HashMap<PathBuf, Meta> = HashMap::new();
+    let mut tags: Tags = HashMap::new();
     let mut current = std::env::current_dir()?;
     current.push("content");
     let current = std::fs::canonicalize(&current)?;
@@ -142,7 +150,7 @@ fn items(cfg: &Config, output: &PathBuf) -> Result<(BTreeMap<i64, Meta>, HashMap
                     continue;
                 }
             }
-            let mut output = output.clone();
+            let mut output = output.to_path_buf();
             output.push(&last);
             if let Some(s) = path.extension() {
                 if let Some("gmi") = s.to_str() {
@@ -163,7 +171,7 @@ fn items(cfg: &Config, output: &PathBuf) -> Result<(BTreeMap<i64, Meta>, HashMap
                                     posts.insert(time.timestamp()?, page.meta);
                                 } else {
                                     page.render(cfg, &output, depth)?;
-                                    pages.insert(last.to_path_buf(), page.meta);
+                                    //pages.insert(last.to_path_buf(), page.meta);
                                 }
                             }
                         }
@@ -180,21 +188,23 @@ fn items(cfg: &Config, output: &PathBuf) -> Result<(BTreeMap<i64, Meta>, HashMap
             }
         }
     }
-    Ok((posts, pages, tags))
+    //Ok((posts, pages, tags))
+    Ok((posts, tags))
 }
 
 struct Capsule {
     posts: BTreeMap<i64, Meta>,
-    pages: HashMap<PathBuf, Meta>,
+    //pages: HashMap<PathBuf, Meta>,
     tags: HashMap<String, Vec<Link>>,
 }
 
 impl Capsule {
-    fn init(cfg: &Config, path: PathBuf) -> Result<Self, Box<dyn Error>> {
-        let (posts, pages, tags) = items(cfg, &path)?;
+    fn init(cfg: &Config, path: &Path) -> Result<Self, Box<dyn Error>> {
+        //let (posts, pages, tags) = items(cfg, &path)?;
+        let (posts, tags) = items(cfg, path)?;
         Ok(Self {
             posts,
-            pages,
+            //pages,
             tags,
         })
     }
@@ -211,7 +221,7 @@ impl Capsule {
             .published
             .as_ref()
             .unwrap()
-            .year;
+            .year();
         let mut url = Url::parse(&format!("gemini://{}", &cfg.domain))?;
         if let Some(p) = &cfg.path {
             url.set_path(&p);
@@ -219,7 +229,7 @@ impl Capsule {
         let feed = atom::FeedBuilder::default()
             .title(cfg.title.to_string())
             .id(url.to_string())
-            .author(cfg.author.to_atom())
+            .author(cfg.author.into_atom())
             .rights(atom::Text::plain(format!(
                 "© {} by {}",
                 year,
@@ -304,6 +314,26 @@ impl Capsule {
         Ok(())
     }
 
+    /*fn indexes(&self) -> HashMap<PathBuf, Vec<(&Path, Meta)>> {
+        let mut indexes: HashMap<PathBuf, Vec<(&Path, Meta)>> = HashMap::new();
+        for (path,page) in &self.pages {
+            let mut idx = PathBuf::from("content");
+            idx.push(&path);
+            idx.set_file_name("index.gmi");
+            let idx = if idx.exists() {
+                idx
+            } else {
+                [r"content", "index.gmi"].iter().collect()
+            };
+            if let Some(links) = indexes.get_mut(&idx) {
+                links.push((path,page.clone()));
+            } else {
+                indexes.insert(idx, vec![(path,page.clone())]);
+            }
+        }
+        indexes
+    }*/
+
     fn render_index(&self, cfg: &Config, output: &Path) -> Result<(), Box<dyn Error>> {
         let origin = PathBuf::from("content/index.gmi");
         if let Some(page) = Page::from_path(&origin) {
@@ -322,9 +352,6 @@ impl Capsule {
             }
             posts.push_str("=> gemlog/ All posts");
             let mut content = content.replace("{% posts %}", &posts);
-            // TODO - index these
-            for (_path,_page) in &self.pages {
-            }
             if let Some(ref license) = cfg.license {
                 content.push_str(&format!(
                     "\n\nAll content for this site is release under the {} license.\n",

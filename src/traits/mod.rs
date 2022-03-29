@@ -11,14 +11,16 @@ use {
     },
 };
 
+/// Saves a content type to disk
 pub trait ToDisk {
     type Err;
 
     fn to_disk(&self, path: &Path) -> Result<(), Self::Err>;
 }
 
+/// Gets the path of a content item
 pub trait GetPath {
-    fn get_path(root: &mut PathBuf, subdir: Option<&Path>) -> PathBuf;
+    fn get_path(root: &Path, subdir: Option<&Path>) -> PathBuf;
 }
 
 impl ToDisk for Feed {
@@ -54,9 +56,10 @@ impl ToDisk for Feed {
 }
 
 impl GetPath for Feed {
-    fn get_path(root: &mut PathBuf, _subdir: Option<&Path>) -> PathBuf {
-        root.push("gemlog");
-        root.push("atom.xml");
-        root.to_path_buf()
+    fn get_path(root: &Path, _subdir: Option<&Path>) -> PathBuf {
+        let mut path = root.to_path_buf();
+        path.push("gemlog");
+        path.push("atom.xml");
+        path
     }
 }

@@ -1,7 +1,13 @@
+#![doc = include_str!("../README.md")]
+/// Generates the command line options struct
 mod cli;
+/// Parses out the subcommands from the cli
 pub(crate) mod command;
+/// Holds the capsule level configuration
 pub(crate) mod config;
+/// Working with pages and gemlog posts
 pub(crate) mod content;
+/// Common traits
 pub(crate) mod traits;
 
 use std::error::Error;

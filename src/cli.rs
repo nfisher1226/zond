@@ -6,6 +6,7 @@ use {
     },
 };
 
+/// Generates the command line options
 pub fn build() -> Command<'static> {
     Command::new("vostok")
         .about("A static Gemini capsule generator")

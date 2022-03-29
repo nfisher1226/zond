@@ -32,15 +32,22 @@ use {
 
 #[derive(Clone, Debug)]
 pub enum Kind {
+    /// An ordinary page
     Page(Option<PathBuf>),
+    /// A gemlog post
     Post,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Meta {
+    /// The title of this page
     pub title: String,
+    /// A brief summary of this page which will appear in the atom feed
     pub summary: Option<String>,
+    /// If unset, this page will not be included in the generated output. If set,
+    /// this will represent the date and time of publication
     pub published: Option<Time>,
+    /// Categories for this page
     pub tags: Vec<String>,
 }
 
@@ -92,13 +99,14 @@ impl Meta {
         file
     }
 
+    /// Generates an atom feed entry for this post
     pub fn atom(&self, kind: Kind, config: &Config) -> Result<atom::Entry, Box<dyn Error>> {
         let mut url: Url = format!("gemini://{}", config.domain).parse()?;
         let mut path = PathBuf::from(&config.path.as_ref().unwrap_or(&"/".to_string()));
         let rpath = Self::get_path(&self.title, kind);
         path.push(&rpath);
         url.set_path(&path.to_string_lossy());
-        let author = config.author.to_atom();
+        let author = config.author.into_atom();
         let entry = atom::EntryBuilder::default()
             .title(self.title.clone())
             .id(url.to_string())
@@ -108,7 +116,7 @@ impl Meta {
             .published(self.published.as_ref().unwrap().to_date_time()?)
             .rights(atom::Text::plain(format!(
                 "© {} by {}",
-                self.published.as_ref().unwrap().year,
+                self.published.as_ref().unwrap().year(),
                 &config.author.name
             )))
             .summary(self.summary.as_ref().map(|t| atom::Text::plain(t)))
@@ -119,7 +127,9 @@ impl Meta {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Page {
+    /// Metadata about this page
     pub meta: Meta,
+    /// The content used to generate this page
     pub content: String,
 }
 
@@ -256,7 +266,7 @@ impl Page {
         }
         page.push_str(&format!(
             "© {} by {}\n",
-            self.meta.published.as_ref().unwrap().year,
+            self.meta.published.as_ref().unwrap().year(),
             cfg.author.name,
         ));
         if cfg.show_email {

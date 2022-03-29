@@ -17,14 +17,5 @@ the terminal output for where they are located, and your shell's documentation f
 where to place them.
 
 ## Usage
-### Initialize a new capsule in the current directory
-```sh
-vostok init
-```
-This will generate a `Config.ron` file, which can then be edited to suit the needs
-of the capsule. Alternatively, many of the capsule parameters may be set by
-supplying arguments to the `init` subcommand. For the full list of arguments, run
-this command:
-```sh
-vostok help init
-```
+For full usage information, see the documents in the `doc/` subdirectory of the
+source repository.

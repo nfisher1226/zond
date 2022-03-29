@@ -12,11 +12,12 @@ use {
     },
 };
 
+/// A wrapper type representing the content of an index page
 pub struct Index(pub String);
 
 impl GetPath for Index {
-    fn get_path(root: &mut PathBuf, subdir: Option<&Path>) -> PathBuf {
-        let mut idx = root.clone();
+    fn get_path(root: &Path, subdir: Option<&Path>) -> PathBuf {
+        let mut idx = root.to_path_buf();
         if let Some(p) = subdir {
             idx.push(p);
         }
