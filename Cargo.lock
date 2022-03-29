@@ -79,6 +79,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap_complete"
+version = "3.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df6f3613c0a3cddfd78b41b10203eb322cb29b600cbdf808a7d3db95691b8e25"
+dependencies = [
+ "clap",
+]
+
+[[package]]
 name = "darling"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -243,6 +252,12 @@ name = "memchr"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "308cc39be01b73d0d18f82a0e7b2a3df85245f84af96fdddc5d202d27e47b86a"
+
+[[package]]
+name = "mime_open"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aa45a708f9c618eca4d5f60449a161ab1dc5542e41d459c419597ea58d853b68"
 
 [[package]]
 name = "never"
@@ -450,7 +465,9 @@ dependencies = [
  "atom_syndication",
  "chrono",
  "clap",
+ "clap_complete",
  "extract-frontmatter",
+ "mime_open",
  "ron",
  "serde",
  "url",

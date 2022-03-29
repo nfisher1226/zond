@@ -127,7 +127,6 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
             let atom = capsule.atom(&cfg)?;
             let mut dest = output.clone();
             dest.push("gemlog");
-            let gem = dest.clone();
             dest.push("atom.xml");
             atom.to_disk(&dest)?;
             let feed = capsule.gemfeed(&cfg)?;
@@ -208,7 +207,6 @@ fn items(cfg: &Config, output: &PathBuf) -> Result<(BTreeMap<i64, Meta>, HashMap
 }
 
 struct Capsule {
-    path: PathBuf,
     posts: BTreeMap<i64, Meta>,
     pages: HashMap<PathBuf, Meta>,
     tags: HashMap<String, Vec<Link>>,
@@ -218,7 +216,6 @@ impl Capsule {
     fn init(cfg: &Config, path: PathBuf) -> Result<Self, Box<dyn Error>> {
         let (posts, pages, tags) = items(cfg, &path)?;
         Ok(Self {
-            path,
             posts,
             pages,
             tags,

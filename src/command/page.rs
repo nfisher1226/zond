@@ -7,16 +7,13 @@ use {
 pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let title = match matches.value_of("title") {
         Some(t) => t,
-        None => return Err(String::from("Missing title").into()),
+        None => "",
     };
+    let path = matches.value_of("path").map(|p| PathBuf::from(p));
     match matches.subcommand() {
         Some(("init", init_matches)) => {
-            let path = match init_matches.value_of("path") {
-                Some(p) => Some(PathBuf::from(p)),
-                None => None,
-            };
             let tags = match init_matches.values_of("tags") {
-                Some(t) => t.map(|x| x.to_string()).collect::<Vec<_>>(),
+                Some(t) => t.map(|tag| tag.to_string()).collect::<Vec<_>>(),
                 None => Vec::new(),
             };
             content::Page::create(
@@ -26,12 +23,11 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
                 tags,
             )?;
         },
-        Some(("publish", publish_matches)) => {
-            let path = match publish_matches.value_of("path") {
-                Some(p) => Some(PathBuf::from(p)),
-                None => None,
-            };
+        Some(("publish", _publish_matches)) => {
             content::Page::publish(content::Kind::Page(path), &title)?;
+        },
+        Some(("edit", _edit_matches)) => {
+            content::Page::edit(content::Kind::Page(path), &title)?;
         },
         _ => {},
     }

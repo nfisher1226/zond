@@ -13,14 +13,14 @@ use {
         Serialize
     },
     std::{
+        env,
         error::Error,
-        io::Write,
         fs,
-        fs::OpenOptions,
         path::{
             Path,
             PathBuf
-        }
+        },
+        process::Command,
     },
     time::Time,
     url::Url,
@@ -41,14 +41,14 @@ pub struct Meta {
 }
 
 impl Meta {
-    fn new(title: &str, summary: Option<&str>, tags: Vec<String>) -> Self {
+    /*fn new(title: &str, summary: Option<&str>, tags: Vec<String>) -> Self {
         Self {
             title: title.to_string(),
             summary: summary.map(|x| x.to_string()),
             published: None,
             tags,
         }
-    }
+    }*/
 
     fn publish(&mut self) {
         self.published = Some(Time::now());
@@ -78,18 +78,22 @@ impl Meta {
     }
 
     pub fn get_path(title: &str, kind: Kind) -> PathBuf {
-        let tpath = title.trim().to_lowercase().replace(" ", "_");
-        let mut file = PathBuf::from("content");
-        match kind {
-            Kind::Page(path) => {
-                if let Some(p) = path {
-                    file.push(&p);
-                }
+        let mut tpath = title.trim().to_lowercase().replace(" ", "_");
+        tpath.push_str(".gmi");
+        let file = match kind {
+            Kind::Page(Some(path)) => path,
+            Kind::Page(None) => {
+                let mut path = PathBuf::from("content");
+                path.push(Path::new(&tpath));
+                path
             },
-            Kind::Post => file.push("gemlog"),
-        }
-        file.push(Path::new(&tpath));
-        file.set_extension("gmi");
+            Kind::Post => {
+                let mut path = PathBuf::from("content");
+                path.push("gemlog");
+                path.push(Path::new(&tpath));
+                path
+            },
+        };
         file
     }
 
@@ -151,10 +155,10 @@ impl Page {
         }
     }
 
-    fn get(title: &str, kind: Kind) -> Option<Self> {
+    /*fn get(title: &str, kind: Kind) -> Option<Self> {
         let file = Meta::get_path(title, kind);
         Self::from_path(&file)
-    }
+    }*/
 
     fn save(&self, file: &PathBuf) -> Result<(), Box<dyn Error>> {
         let mut contents = to_string_pretty(&self.meta, PrettyConfig::new())?;
@@ -172,19 +176,24 @@ impl Page {
     ) -> Result<PathBuf, Box<dyn Error>> {
         let mut tpath = title.trim().to_lowercase().replace(" ", "_");
         tpath.push_str(".gmi");
-        let mut file = PathBuf::from("content");
-        match kind {
-            Kind::Page(path) => {
-                if let Some(p) = path {
-                    file.push(&p);
-                }
+        let file = match kind {
+            Kind::Page(Some(path)) => path,
+            Kind::Page(None) => {
+                let mut path = PathBuf::from("content");
+                path.push(&tpath);
+                path
             },
-            Kind::Post => file.push("gemlog"),
+            Kind::Post => {
+                let mut path = PathBuf::from("content");
+                path.push("gemlog");
+                path.push(&tpath);
+                path
+            },
         };
-        if !file.exists() {
-            fs::create_dir_all(&file)?;
+        let parent = file.parent().unwrap();
+        if !parent.exists() {
+            fs::create_dir_all(&parent)?;
         }
-        file.push(Path::new(&tpath));
         let meta = Meta {
             title: title.to_string(),
             summary: summary.map(|x| x.to_string()),
@@ -208,6 +217,19 @@ impl Page {
         Ok(())
     }
 
+    pub fn edit(kind: Kind, title: &str) -> Result<(), Box<dyn Error>> {
+        let path = Meta::get_path(title, kind);
+        match env::var("EDITOR") {
+            Ok(ed) => {
+                Command::new(ed)
+                    .arg(&format!("{}", path.display()))
+                    .status()?;
+            },
+            Err(_) => mime_open::open(&format!("{}", path.display()))?,
+        }
+        Ok(())
+    }
+
     pub fn timestamp(&self) -> Result<i64, Box<dyn Error>> {
         match &self.meta.published {
             Some(time) => Ok(time.timestamp()?),
@@ -215,9 +237,9 @@ impl Page {
         }
     }
 
-    fn published(&self) -> bool {
+    /*fn published(&self) -> bool {
         self.meta.published.is_some()
-    }
+    }*/
 
     pub fn render(&self, cfg: &Config, path: &Path, depth: usize) -> Result<(), Box<dyn Error>> {
         let mut page = format!(

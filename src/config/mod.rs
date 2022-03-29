@@ -12,7 +12,6 @@ use {
         error::Error,
         fmt::Display,
         fs,
-        io,
         path::PathBuf
     },
     url::Url,

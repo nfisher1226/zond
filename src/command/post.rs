@@ -1,6 +1,6 @@
 use {
     clap::ArgMatches,
-    std::{ error::Error, path::PathBuf },
+    std::error::Error,
     crate::content,
 };
 
@@ -25,6 +25,9 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         Some(("publish", _publish_matches)) => {
             content::Page::publish(content::Kind::Post, &title)?;
         },
+        Some(("edit", _edit_matches)) => {
+            content::Page::edit(content::Kind::Post, &title)?;
+        }
         _ => {},
     }
     Ok(())
