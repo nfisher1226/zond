@@ -1,10 +1,11 @@
 use {
+    crate::config::{Config, Feed},
     clap::ArgMatches,
-    crate::config::{ Config, Feed, License },
-    std::{ error::Error, path::PathBuf },
+    std::{error::Error, path::PathBuf},
     url::Url,
 };
 
+/// Creates and saves `Config.ron` to disk
 pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let cfg_file = PathBuf::from("Config.ron");
     let mut cfg = Config::default();
@@ -15,7 +16,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         cfg.author.name = author.to_string();
     }
     if let Some(email) = matches.value_of("email") {
-        if let Some((_user,_domain)) = email.split_once('@') {
+        if let Some((_user, _domain)) = email.split_once('@') {
             cfg.author.email = Some(email.to_string());
         } else {
             return Err(format!("Invalid email address: {}", email).into());
@@ -44,15 +45,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         }
     }
     if let Some(l) = matches.value_of("license") {
-        cfg.license = Some(match l {
-            "CcBy" | "ccby" => License::CcBy,
-            "CcBySa" | "ccbysa" => License::CcBySa,
-            "CcByNc" | "ccbync" => License::CcByNc,
-            "CcByNcSa" | "ccbyncsa" => License::CcByNcSa,
-            "CcByNd" | "ccbynd" => License::CcByNd,
-            "CcByNcNd" | "ccbyncnd" => License::CcByNcNd,
-            s => License::Other(s.to_string()),
-        });
+        cfg.license = Some(l.into());
     }
     if let Some(e) = matches.value_of("show_email") {
         cfg.show_email = e.parse()?;

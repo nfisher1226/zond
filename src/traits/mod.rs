@@ -3,10 +3,7 @@ use {
     std::{
         error::Error,
         io::Write,
-        path::{
-            Path,
-            PathBuf,
-        },
+        path::{Path, PathBuf},
         process::Stdio,
     },
 };
@@ -38,18 +35,23 @@ impl ToDisk for Feed {
             .arg("1")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .spawn() {
+            .spawn()
+        {
             Ok(mut child) => {
-                child.stdin.as_mut().unwrap().write_all(self.to_string().as_bytes())?;
+                child
+                    .stdin
+                    .as_mut()
+                    .unwrap()
+                    .write_all(self.to_string().as_bytes())?;
                 let output = child.wait_with_output()?;
                 let atom = String::from_utf8_lossy(&output.stdout);
                 std::fs::write(path, &String::from(atom))?;
-            },
+            }
             Err(_) => {
                 let atom = self.to_string();
                 let atom = atom.replace(">", ">\n");
                 std::fs::write(path, &atom)?;
-            },
+            }
         }
         Ok(())
     }

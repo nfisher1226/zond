@@ -1,29 +1,19 @@
+/// Working with the main and gemlog indexes
 pub mod index;
+/// Date and time functionality
 mod time;
 
 use {
+    crate::{config::Config, traits::ToDisk},
     atom_syndication as atom,
-    crate::{
-        config::Config,
-        traits::ToDisk,
-    },
     extract_frontmatter::Extractor,
-    ron::ser::{
-        to_string_pretty,
-        PrettyConfig
-    },
-    serde::{
-        Deserialize,
-        Serialize
-    },
+    ron::ser::{to_string_pretty, PrettyConfig},
+    serde::{Deserialize, Serialize},
     std::{
         env,
         error::Error,
         fs,
-        path::{
-            Path,
-            PathBuf
-        },
+        path::{Path, PathBuf},
         process::Command,
     },
     time::Time,
@@ -31,14 +21,19 @@ use {
 };
 
 #[derive(Clone, Debug)]
+/// The content type, page or post
 pub enum Kind {
-    /// An ordinary page
-    Page(Option<PathBuf>),
+    /// An ordinary page plus the path from the content root
+    Page(
+        /// The path from the capsule root to this document
+        Option<PathBuf>,
+    ),
     /// A gemlog post
     Post,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+/// Metadata for a page or post
 pub struct Meta {
     /// The title of this page
     pub title: String,
@@ -52,10 +47,13 @@ pub struct Meta {
 }
 
 impl Meta {
+    /// Marks this item as published with a publishing time corresponding the
+    /// current UTC time
     fn publish(&mut self) {
         self.published = Some(Time::now());
     }
 
+    /// Returns a `Vec` of atom_syndication::Categories from the tags of this item
     fn categories(&self, cfg: &Config) -> Result<Vec<atom::Category>, Box<dyn Error>> {
         let mut categories = Vec::new();
         for tag in &self.tags {
@@ -79,6 +77,7 @@ impl Meta {
         Ok(categories)
     }
 
+    /// Given the title and `Kind` of this item, returns the path to the source file
     pub fn get_path(title: &str, kind: Kind) -> PathBuf {
         let mut tpath = title.trim().to_lowercase().replace(" ", "_");
         tpath.push_str(".gmi");
@@ -88,13 +87,13 @@ impl Meta {
                 let mut path = PathBuf::from("content");
                 path.push(Path::new(&tpath));
                 path
-            },
+            }
             Kind::Post => {
                 let mut path = PathBuf::from("content");
                 path.push("gemlog");
                 path.push(Path::new(&tpath));
                 path
-            },
+            }
         };
         file
     }
@@ -126,6 +125,7 @@ impl Meta {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+/// A freestanding page or gemlog post
 pub struct Page {
     /// Metadata about this page
     pub meta: Meta,
@@ -146,25 +146,23 @@ impl ToDisk for Page {
 }
 
 impl Page {
+    /// Retreive a `Page` given it's path
     pub fn from_path(file: &PathBuf) -> Option<Self> {
         match fs::read_to_string(file) {
             Ok(f) => {
                 let mut extractor = Extractor::new(&f);
                 extractor.select_by_terminator("---");
-                let (fm,doc): (Vec<&str>, &str) = extractor.split();
+                let (fm, doc): (Vec<&str>, &str) = extractor.split();
                 let fm = fm.join("\n");
                 let content = doc.trim().to_string();
                 match ron::de::from_str(&fm) {
-                    Ok(meta) => Some(Self {
-                        meta,
-                        content,
-                    }),
+                    Ok(meta) => Some(Self { meta, content }),
                     Err(e) => {
                         eprintln!("{}", e);
                         None
                     }
                 }
-            },
+            }
             Err(e) => {
                 eprintln!("{}", e);
                 None
@@ -172,11 +170,12 @@ impl Page {
         }
     }
 
+    /// Create a new `Page`
     pub fn create(
         kind: Kind,
         title: &str,
         summary: Option<&str>,
-        tags: Vec<String>
+        tags: Vec<String>,
     ) -> Result<PathBuf, Box<dyn Error>> {
         let mut tpath = title.trim().to_lowercase().replace(" ", "_");
         tpath.push_str(".gmi");
@@ -186,13 +185,13 @@ impl Page {
                 let mut path = PathBuf::from("content");
                 path.push(&tpath);
                 path
-            },
+            }
             Kind::Post => {
                 let mut path = PathBuf::from("content");
                 path.push("gemlog");
                 path.push(&tpath);
                 path
-            },
+            }
         };
         let parent = file.parent().unwrap();
         if !parent.exists() {
@@ -212,6 +211,7 @@ impl Page {
         Ok(file)
     }
 
+    /// Publish a page given it's `Kind` and title
     pub fn publish(kind: Kind, title: &str) -> Result<(), Box<dyn Error>> {
         let path = Meta::get_path(title, kind);
         if let Some(mut page) = Self::from_path(&path) {
@@ -221,6 +221,7 @@ impl Page {
         Ok(())
     }
 
+    /// Open a `Page` in your editor
     pub fn edit(kind: Kind, title: &str) -> Result<(), Box<dyn Error>> {
         let path = Meta::get_path(title, kind);
         match env::var("EDITOR") {
@@ -228,12 +229,13 @@ impl Page {
                 Command::new(ed)
                     .arg(&format!("{}", path.display()))
                     .status()?;
-            },
+            }
             Err(_) => mime_open::open(&format!("{}", path.display()))?,
         }
         Ok(())
     }
 
+    /// Render a page and save it to disk
     pub fn render(&self, cfg: &Config, path: &Path, depth: usize) -> Result<(), Box<dyn Error>> {
         let mut page = format!(
             "# {}\n### {}\n{}\n\n",
@@ -271,10 +273,7 @@ impl Page {
         ));
         if cfg.show_email {
             if let Some(ref email) = cfg.author.email {
-                page.push_str(&format!(
-                    "=> mailto:{} Contact\n",
-                    email,
-                ));
+                page.push_str(&format!("=> mailto:{} Contact\n", email,));
             }
         }
         if let Some(p) = path.parent() {

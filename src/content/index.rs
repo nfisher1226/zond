@@ -1,19 +1,16 @@
 use {
-    crate::traits::{
-        GetPath,
-        ToDisk,
-    },
+    crate::traits::{GetPath, ToDisk},
     std::{
         error::Error,
-        path::{
-            Path,
-            PathBuf,
-        },
+        path::{Path, PathBuf},
     },
 };
 
 /// A wrapper type representing the content of an index page
-pub struct Index(pub String);
+pub struct Index(
+    /// The content of the index page
+    pub String,
+);
 
 impl GetPath for Index {
     fn get_path(root: &Path, subdir: Option<&Path>) -> PathBuf {

@@ -1,10 +1,4 @@
-use {
-    clap::{
-        Arg,
-        ArgGroup,
-        Command,
-    },
-};
+use clap::{Arg, ArgGroup, Command};
 
 /// Generates the command line options
 pub fn build() -> Command<'static> {

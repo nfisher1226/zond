@@ -1,9 +1,10 @@
 use {
-    clap::ArgMatches,
-    std::{ error::Error, path::PathBuf },
     crate::content,
+    clap::ArgMatches,
+    std::{error::Error, path::PathBuf},
 };
 
+/// Matches the `page` subcommand cli arguments and runs the appropriate code
 pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let title = match matches.value_of("title") {
         Some(t) => t,
@@ -22,14 +23,14 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
                 init_matches.value_of("summary"),
                 tags,
             )?;
-        },
+        }
         Some(("publish", _publish_matches)) => {
             content::Page::publish(content::Kind::Page(path), &title)?;
-        },
+        }
         Some(("edit", _edit_matches)) => {
             content::Page::edit(content::Kind::Page(path), &title)?;
-        },
-        _ => {},
+        }
+        _ => {}
     }
     Ok(())
 }
