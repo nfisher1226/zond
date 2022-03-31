@@ -1,7 +1,7 @@
 use {
     crate::{
         config::Config,
-        content::{index::Index, Kind, Meta, Page},
+        content::{index::Index, Kind, Meta, Page, Time},
         traits::{GetPath, ToDisk},
     },
     atom_syndication as atom,
@@ -18,12 +18,17 @@ use {
     walkdir::WalkDir,
 };
 
+#[derive(Default)]
+struct Post {
+    meta: Meta,
+    link: Link,
+}
 /// A BTreeMap of gemlog posts
 type Posts = BTreeMap<i64, Post>;
 /// A HashMap of tag names and their associated links
 type Tags = HashMap<String, Vec<Link>>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 /// Represents both a url and the text to be displayed
 pub struct Link {
     pub url: String,
@@ -46,11 +51,6 @@ impl Link {
             ),
         })
     }
-}
-
-struct Post {
-    meta: Meta,
-    link: Link,
 }
 
 #[derive(Clone)]
@@ -133,6 +133,9 @@ impl Capsule {
         let mut tags: Tags = HashMap::new();
         let mut current = std::env::current_dir()?;
         current.push("content");
+        if !current.exists() {
+            std::fs::create_dir_all(&current)?;
+        }
         let current = std::fs::canonicalize(&current)?;
         let mut index = current.clone();
         index.push("index.gmi");
@@ -203,11 +206,11 @@ impl Capsule {
             .posts
             .values()
             .last()
-            .unwrap()
+            .unwrap_or(&Post::default())
             .meta
             .published
             .as_ref()
-            .unwrap()
+            .unwrap_or(&Time::now())
             .year();
         let mut url = Url::parse(&format!("gemini://{}", &cfg.domain))?;
         if let Some(p) = &cfg.path {
@@ -253,13 +256,14 @@ impl Capsule {
         let base_url = cfg.url()?;
         let tags_url = base_url.join("tags/")?;
         let mut index_page = format!("# {}\n\n### All tags\n", &cfg.title);
+        let mut dest = PathBuf::from(output);
+        dest.push("tags");
+        if !dest.exists() {
+            std::fs::create_dir_all(&dest)?;
+        }
         for (tag, links) in &self.tags {
             index_page.push_str(&format!("=> {}.gmi {}\n", &tag, &tag));
-            let mut dest = PathBuf::from(output);
-            dest.push(&PathBuf::from("tags"));
-            if !dest.exists() {
-                std::fs::create_dir_all(&dest)?;
-            }
+            let mut dest = dest.clone();
             dest.push(&PathBuf::from(&tag));
             dest.set_extension("gmi");
             let mut page = format!("# {}\n\n### Pages tagged {}\n", &cfg.title, &tag);
@@ -315,91 +319,91 @@ impl Capsule {
     /// Renders the capsule main index
     fn render_index(&self, cfg: &Config, output: &Path) -> Result<(), Box<dyn Error>> {
         let origin = PathBuf::from("content/index.gmi");
-        if let Some(page) = Page::from_path(&origin) {
-            let mut content = format!("# {}\n\n", &cfg.title);
-            content.push_str(&page.content);
-            let mut posts = String::from("### Gemlog posts\n");
-            let num = std::cmp::min(cfg.entries, self.posts.len());
-            let base = cfg.url()?;
-            for post in self.posts.values().rev().take(num) {
-                let url = Url::parse(&post.link.url)?;
-                let url = if let Some(u) = base.make_relative(&url) {
-                    Cow::from(u.to_string())
-                } else {
-                    Cow::from(&post.link.url)
-                };
-                posts.push_str(&format!(
-                    "=> {} {}\n",
-                    url,
-                    post.link.display,
-                ));
-            }
-            posts.push_str("=> gemlog/ All posts");
-            let mut content = content.replace("{% posts %}", &posts);
-            if let Some(ref license) = cfg.license {
-                content.push_str(&format!(
-                    "\n\nAll content for this site is release under the {} license.\n",
-                    license.to_string(),
-                ));
-            }
-            content.push_str(&format!(
-                "© {} by {}\n",
-                Utc::now().date().year(),
-                &cfg.author.name
-            ));
-            if cfg.show_email {
-                if let Some(ref email) = cfg.author.email {
-                    content.push_str(&format!("=> mailto:{} Contact\n", email,));
-                }
-            }
-            let path = Index::get_path(&mut PathBuf::from(output), None);
-            Index(content).to_disk(&path)?;
+        let page = if let Some(p) = Page::from_path(&origin) {
+            p
+        } else {
+            let mut idx = Page::default();
+            idx.content.push_str("{% posts %}");
+            idx
+        };
+        let mut content = format!("# {}\n\n", &cfg.title);
+        content.push_str(&page.content);
+        let mut posts = String::from("### Gemlog posts\n");
+        let num = std::cmp::min(cfg.entries, self.posts.len());
+        let base = cfg.url()?;
+        for post in self.posts.values().rev().take(num) {
+            let url = Url::parse(&post.link.url)?;
+            let url = if let Some(u) = base.make_relative(&url) {
+                Cow::from(u.to_string())
+            } else {
+                Cow::from(&post.link.url)
+            };
+            posts.push_str(&format!("=> {} {}\n", url, post.link.display,));
         }
+        posts.push_str("=> gemlog/ All posts");
+        let mut content = content.replace("{% posts %}", &posts);
+        if let Some(ref license) = cfg.license {
+            content.push_str(&format!(
+                "\n\nAll content for this site is release under the {} license.\n",
+                license.to_string(),
+            ));
+        }
+        content.push_str(&format!(
+            "© {} by {}\n",
+            Utc::now().date().year(),
+            &cfg.author.name
+        ));
+        if cfg.show_email {
+            if let Some(ref email) = cfg.author.email {
+                content.push_str(&format!("=> mailto:{} Contact\n", email,));
+            }
+        }
+        let path = Index::get_path(&mut PathBuf::from(output), None);
+        Index(content).to_disk(&path)?;
         Ok(())
     }
 
     /// Renders the gemlog index
     fn render_gemlog_index(&self, cfg: &Config, output: &Path) -> Result<(), Box<dyn Error>> {
         let origin = PathBuf::from("content/gemlog/index.gmi");
-        if let Some(page) = Page::from_path(&origin) {
-            let mut content = format!("# {}\n\n", &cfg.title);
-            content.push_str(&page.content);
-            content.push_str("\n\n### Gemlog posts\n");
-            let base = cfg.url()?;
-            let base = base.join("gemlog/index.gmi")?;
-            for post in self.posts.values().rev() {
-                let url = Url::parse(&post.link.url)?;
-                let url = if let Some(u) = base.make_relative(&url) {
-                    Cow::from(u.to_string())
-                } else {
-                    Cow::from(&post.link.url)
-                };
-                content.push_str(&format!(
-                    "=> {} {}\n",
-                    url,
-                    post.link.display,
-                ));
-            }
-            content.push_str("\n=> ../tags tags\n=> .. Home\n");
-            if let Some(ref license) = cfg.license {
-                content.push_str(&format!(
-                    "All content for this site is release under the {} license.\n",
-                    license.to_string(),
-                ));
-            }
-            content.push_str(&format!(
-                "© {} by {}\n",
-                Utc::now().date().year(),
-                &cfg.author.name
-            ));
-            if cfg.show_email {
-                if let Some(ref email) = cfg.author.email {
-                    content.push_str(&format!("=> mailto:{} Contact\n", email,));
-                }
-            }
-            let path = Index::get_path(&mut PathBuf::from(output), Some(&PathBuf::from("gemlog")));
-            Index(content).to_disk(&path)?;
+        let page = if let Some(p) = Page::from_path(&origin) {
+            p
+        } else {
+            Page::default()
+        };
+        let mut content = format!("# {}\n\n", &cfg.title);
+        content.push_str(&page.content);
+        content.push_str("\n\n### Gemlog posts\n");
+        let base = cfg.url()?;
+        let base = base.join("gemlog/index.gmi")?;
+        for post in self.posts.values().rev() {
+            let url = Url::parse(&post.link.url)?;
+            let url = if let Some(u) = base.make_relative(&url) {
+                Cow::from(u.to_string())
+            } else {
+                Cow::from(&post.link.url)
+            };
+            content.push_str(&format!("=> {} {}\n", url, post.link.display,));
         }
+        content.push_str("\n=> ../tags tags\n=> .. Home\n");
+        if let Some(ref license) = cfg.license {
+            content.push_str(&format!(
+                "All content for this site is release under the {} license.\n",
+                license.to_string(),
+            ));
+        }
+        content.push_str(&format!(
+            "© {} by {}\n",
+            Utc::now().date().year(),
+            &cfg.author.name
+        ));
+        if cfg.show_email {
+            if let Some(ref email) = cfg.author.email {
+                content.push_str(&format!("=> mailto:{} Contact\n", email,));
+            }
+        }
+        let path = Index::get_path(&mut PathBuf::from(output), Some(&PathBuf::from("gemlog")));
+        Index(content).to_disk(&path)?;
         Ok(())
     }
 }

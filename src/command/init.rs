@@ -1,5 +1,9 @@
 use {
-    crate::config::{Config, Feed},
+    crate::{
+        config::{Config, Feed},
+        content::Page,
+        traits::ToDisk,
+    },
     clap::ArgMatches,
     std::{error::Error, path::PathBuf},
     url::Url,
@@ -53,5 +57,20 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     if !cfg_file.exists() {
         cfg.save()?;
     }
+    let mut gemlog = PathBuf::from("content");
+    gemlog.push("gemlog");
+    if !gemlog.exists() {
+        std::fs::create_dir_all(&gemlog)?;
+    }
+    let mut idx = PathBuf::from("content");
+    idx.push("index.gmi");
+    let mut idx_page = Page::default();
+    idx_page.content.push_str("{% posts %}\n");
+    idx_page.to_disk(&idx)?;
+    idx = PathBuf::from("content");
+    idx.push("gemlog");
+    idx.push("index.gmi");
+    idx_page = Page::default();
+    idx_page.to_disk(&idx)?;
     Ok(())
 }

@@ -16,9 +16,9 @@ use {
         path::{Path, PathBuf},
         process::Command,
     },
-    time::Time,
     url::Url,
 };
+pub use time::Time;
 
 #[derive(Clone, Debug)]
 /// The content type, page or post
@@ -32,7 +32,7 @@ pub enum Kind {
     Post,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 /// Metadata for a page or post
 pub struct Meta {
     /// The title of this page
@@ -130,7 +130,7 @@ impl Meta {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 /// A freestanding page or gemlog post
 pub struct Page {
     /// Metadata about this page
@@ -163,16 +163,10 @@ impl Page {
                 let content = doc.trim().to_string();
                 match ron::de::from_str(&fm) {
                     Ok(meta) => Some(Self { meta, content }),
-                    Err(e) => {
-                        eprintln!("{}", e);
-                        None
-                    }
+                    Err(_) => None,
                 }
             }
-            Err(e) => {
-                eprintln!("{}", e);
-                None
-            }
+            Err(_) => None,
         }
     }
 
