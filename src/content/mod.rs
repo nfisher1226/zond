@@ -103,15 +103,21 @@ impl Meta {
         let mut url: Url = format!("gemini://{}", config.domain).parse()?;
         let mut path = PathBuf::from(&config.path.as_ref().unwrap_or(&"/".to_string()));
         let rpath = Self::get_path(&self.title, kind);
+        let rpath = rpath.strip_prefix("content")?;
         path.push(&rpath);
         url.set_path(&path.to_string_lossy());
+        let url = url.to_string();
+        let mut link = atom::Link::default();
+        link.set_href(&url);
+        link.set_rel("alternate");
         let author = config.author.into_atom();
         let entry = atom::EntryBuilder::default()
             .title(self.title.clone())
-            .id(url.to_string())
+            .id(url)
             .updated(self.published.as_ref().unwrap().to_date_time()?)
             .authors(vec![author])
             .categories(self.categories(&config)?)
+            .link(link)
             .published(self.published.as_ref().unwrap().to_date_time()?)
             .rights(atom::Text::plain(format!(
                 "© {} by {}",

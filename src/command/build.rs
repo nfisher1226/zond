@@ -9,6 +9,7 @@ use {
     chrono::{Datelike, Utc},
     clap::ArgMatches,
     std::{
+        borrow::Cow,
         collections::{BTreeMap, HashMap},
         error::Error,
         path::{Path, PathBuf},
@@ -18,11 +19,11 @@ use {
 };
 
 /// A BTreeMap of gemlog posts
-type Posts = BTreeMap<i64, Meta>;
+type Posts = BTreeMap<i64, Post>;
 /// A HashMap of tag names and their associated links
 type Tags = HashMap<String, Vec<Link>>;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 /// Represents both a url and the text to be displayed
 pub struct Link {
     pub url: String,
@@ -30,13 +31,12 @@ pub struct Link {
 }
 
 impl Link {
-    pub fn to_gmi(&self) -> String {
-        format!("=> {} {}\n", &self.url, &self.display)
-    }
-
     pub fn get(origin: &Path, cfg: &Config, meta: &Meta) -> Result<Self, Box<dyn Error>> {
         let mut url = cfg.url()?;
-        url.set_path(&origin.to_string_lossy());
+        let mut current = std::env::current_dir()?;
+        current.push("content");
+        let path = origin.strip_prefix(current)?;
+        url.set_path(&path.to_string_lossy());
         Ok(Self {
             url: url.to_string(),
             display: format!(
@@ -46,6 +46,11 @@ impl Link {
             ),
         })
     }
+}
+
+struct Post {
+    meta: Meta,
+    link: Link,
 }
 
 #[derive(Clone)]
@@ -162,7 +167,11 @@ impl Capsule {
                                     }
                                     if last.starts_with("gemlog") {
                                         page.render(cfg, &output, depth)?;
-                                        posts.insert(time.timestamp()?, page.meta);
+                                        let post = Post {
+                                            link,
+                                            meta: page.meta.clone(),
+                                        };
+                                        posts.insert(time.timestamp()?, post);
                                     } else {
                                         page.render(cfg, &output, depth)?;
                                     }
@@ -188,13 +197,14 @@ impl Capsule {
     fn atom(&self, cfg: &Config) -> Result<atom::Feed, Box<dyn Error>> {
         let mut entries: Vec<atom::Entry> = vec![];
         for entry in self.posts.values().rev() {
-            entries.push(entry.atom(Kind::Post, cfg)?);
+            entries.push(entry.meta.atom(Kind::Post, cfg)?);
         }
         let year = self
             .posts
             .values()
             .last()
             .unwrap()
+            .meta
             .published
             .as_ref()
             .unwrap()
@@ -223,14 +233,15 @@ impl Capsule {
         for entry in self.posts.values().rev() {
             let mut url: Url = format!("gemini://{}", cfg.domain).parse()?;
             let mut path = PathBuf::from(&cfg.path.as_ref().unwrap_or(&"/".to_string()));
-            let rpath = Meta::get_path(&entry.title, Kind::Post);
+            let rpath = Meta::get_path(&entry.meta.title, Kind::Post);
+            let rpath = rpath.strip_prefix("content")?;
             path.push(&rpath);
             url.set_path(&path.to_string_lossy());
             page.push_str(&format!(
                 "=> {} {} - {}\n",
                 url.to_string(),
-                entry.published.as_ref().unwrap().date_string(),
-                &entry.title,
+                entry.meta.published.as_ref().unwrap().date_string(),
+                &entry.meta.title,
             ));
         }
         Ok(GemFeed(page))
@@ -239,6 +250,8 @@ impl Capsule {
     /// Creates a gemtext page for each tag and an index page of all tags
     fn render_tags(&self, cfg: &Config, output: &Path) -> Result<(), Box<dyn Error>> {
         let index_path = Index::get_path(&mut output.to_path_buf(), Some(&PathBuf::from("tags")));
+        let base_url = cfg.url()?;
+        let tags_url = base_url.join("tags/")?;
         let mut index_page = format!("# {}\n\n### All tags\n", &cfg.title);
         for (tag, links) in &self.tags {
             index_page.push_str(&format!("=> {}.gmi {}\n", &tag, &tag));
@@ -251,7 +264,12 @@ impl Capsule {
             dest.set_extension("gmi");
             let mut page = format!("# {}\n\n### Pages tagged {}\n", &cfg.title, &tag);
             for link in links {
-                page.push_str(&link.to_gmi());
+                let url = if let Some(u) = tags_url.make_relative(&Url::parse(&link.url)?) {
+                    Cow::from(u.to_string())
+                } else {
+                    Cow::from(&link.url)
+                };
+                page.push_str(&format!("=> {} {}\n", url, link.display));
             }
             page.push_str("\n=> . All tags\n");
             page.push_str("=> .. Home\n");
@@ -302,13 +320,18 @@ impl Capsule {
             content.push_str(&page.content);
             let mut posts = String::from("### Gemlog posts\n");
             let num = std::cmp::min(cfg.entries, self.posts.len());
+            let base = cfg.url()?;
             for post in self.posts.values().rev().take(num) {
-                let path = Meta::get_path(&post.title, Kind::Post);
+                let url = Url::parse(&post.link.url)?;
+                let url = if let Some(u) = base.make_relative(&url) {
+                    Cow::from(u.to_string())
+                } else {
+                    Cow::from(&post.link.url)
+                };
                 posts.push_str(&format!(
-                    "=> gemlog/{} {} - {}\n",
-                    path.file_name().unwrap().to_str().unwrap(),
-                    post.published.as_ref().unwrap().date_string(),
-                    &post.title,
+                    "=> {} {}\n",
+                    url,
+                    post.link.display,
                 ));
             }
             posts.push_str("=> gemlog/ All posts");
@@ -342,13 +365,19 @@ impl Capsule {
             let mut content = format!("# {}\n\n", &cfg.title);
             content.push_str(&page.content);
             content.push_str("\n\n### Gemlog posts\n");
+            let base = cfg.url()?;
+            let base = base.join("gemlog/index.gmi")?;
             for post in self.posts.values().rev() {
-                let path = Meta::get_path(&post.title, Kind::Post);
+                let url = Url::parse(&post.link.url)?;
+                let url = if let Some(u) = base.make_relative(&url) {
+                    Cow::from(u.to_string())
+                } else {
+                    Cow::from(&post.link.url)
+                };
                 content.push_str(&format!(
-                    "=> {} {} - {}\n",
-                    path.file_name().unwrap().to_str().unwrap(),
-                    post.published.as_ref().unwrap().date_string(),
-                    &post.title,
+                    "=> {} {}\n",
+                    url,
+                    post.link.display,
                 ));
             }
             content.push_str("\n=> ../tags tags\n=> .. Home\n");
