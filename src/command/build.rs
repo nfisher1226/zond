@@ -197,22 +197,22 @@ impl Capsule {
     }
 
     /// Generates an Atom feed from the metadata
-    fn atom(&self, cfg: &Config) -> Result<atom::Feed, Box<dyn Error>> {
+    fn atom(&self, cfg: &Config) -> Result<Feed, Box<dyn Error>> {
         let mut entries: Vec<atom::Entry> = vec![];
         for entry in self.posts.values().rev() {
             entries.push(entry.meta.atom(Kind::Post, cfg)?);
         }
-        let year = self
+        let year = if let Some(Some(date)) = self
             .posts
             .values()
             .last()
-            .unwrap_or(&Post::default())
-            .meta
-            .published
-            .as_ref()
-            .unwrap_or(&Time::now())
-            .year();
-        let mut url = Url::parse(&format!("gemini://{}", &cfg.domain))?;
+            .map(|post| post.meta.published.as_ref())
+        {
+            date.year()
+        } else {
+            Time::now().year()
+        };
+        let mut url = cfg.url()?;
         if let Some(p) = &cfg.path {
             url.set_path(&p);
         }
@@ -234,7 +234,7 @@ impl Capsule {
     fn gemfeed(&self, cfg: &Config) -> Result<GemFeed, Box<dyn Error>> {
         let mut page = format!("# {}\n\n", &cfg.title);
         for entry in self.posts.values().rev() {
-            let mut url: Url = format!("gemini://{}", cfg.domain).parse()?;
+            let mut url = cfg.url()?;
             let mut path = PathBuf::from(&cfg.path.as_ref().unwrap_or(&"/".to_string()));
             let rpath = Meta::get_path(&entry.meta.title, Kind::Post);
             let rpath = rpath.strip_prefix("content")?;
@@ -264,7 +264,7 @@ impl Capsule {
         for (tag, links) in &self.tags {
             index_page.push_str(&format!("=> {}.gmi {}\n", &tag, &tag));
             let mut dest = dest.clone();
-            dest.push(&PathBuf::from(&tag));
+            dest.push(tag);
             dest.set_extension("gmi");
             let mut page = format!("# {}\n\n### Pages tagged {}\n", &cfg.title, &tag);
             for link in links {
@@ -318,7 +318,7 @@ impl Capsule {
 
     /// Renders the capsule main index
     fn render_index(&self, cfg: &Config, output: &Path) -> Result<(), Box<dyn Error>> {
-        let origin = PathBuf::from("content/index.gmi");
+        let origin: PathBuf = ["content", "index.gmi"].iter().collect();
         let page = if let Some(p) = Page::from_path(&origin) {
             p
         } else {
@@ -365,7 +365,7 @@ impl Capsule {
 
     /// Renders the gemlog index
     fn render_gemlog_index(&self, cfg: &Config, output: &Path) -> Result<(), Box<dyn Error>> {
-        let origin = PathBuf::from("content/gemlog/index.gmi");
+        let origin: PathBuf = ["content", "gemlog", "index.gmi"].iter().collect();
         let page = if let Some(p) = Page::from_path(&origin) {
             p
         } else {
@@ -384,6 +384,18 @@ impl Capsule {
                 Cow::from(&post.link.url)
             };
             content.push_str(&format!("=> {} {}\n", url, post.link.display,));
+        }
+        match &cfg.feed {
+            Some(crate::config::Feed::Atom) => {
+                content.push_str("\n=> atom.xml Atom Feed\n");
+            },
+            Some(crate::config::Feed::Gemini) => {
+                content.push_str("\n=> feed.gmi Gemini Feed\n");
+            },
+            Some(crate::config::Feed::Both) => {
+                content.push_str("\n=> atom.xml Atom Feed\n=> feed.gmi Gemini Feed\n");
+            },
+            None => {},
         }
         content.push_str("\n=> ../tags tags\n=> .. Home\n");
         if let Some(ref license) = cfg.license {

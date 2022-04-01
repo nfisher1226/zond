@@ -1,7 +1,10 @@
 use {
     crate::{
         config::{Config, Feed},
-        content::Page,
+        content::{
+            Meta,
+            Page,
+        },
         traits::ToDisk,
     },
     clap::ArgMatches,
@@ -62,14 +65,13 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     if !gemlog.exists() {
         std::fs::create_dir_all(&gemlog)?;
     }
-    let mut idx = PathBuf::from("content");
-    idx.push("index.gmi");
-    let mut idx_page = Page::default();
-    idx_page.content.push_str("{% posts %}\n");
+    let mut idx: PathBuf = ["content", "index.gmi"].iter().collect();
+    let mut idx_page = Page {
+        meta: Meta::default(),
+        content: String::from("{% posts %}"),
+    };
     idx_page.to_disk(&idx)?;
-    idx = PathBuf::from("content");
-    idx.push("gemlog");
-    idx.push("index.gmi");
+    idx = ["content", "gemlog", "index.gmi"].iter().collect();
     idx_page = Page::default();
     idx_page.to_disk(&idx)?;
     Ok(())

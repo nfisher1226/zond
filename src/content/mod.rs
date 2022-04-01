@@ -3,6 +3,7 @@ pub mod index;
 /// Date and time functionality
 mod time;
 
+pub use time::Time;
 use {
     crate::{config::Config, traits::ToDisk},
     atom_syndication as atom,
@@ -18,7 +19,6 @@ use {
     },
     url::Url,
 };
-pub use time::Time;
 
 #[derive(Clone, Debug)]
 /// The content type, page or post
