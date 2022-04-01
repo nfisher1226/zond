@@ -14,16 +14,16 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
             };
             content::Page::create(
                 content::Kind::Post,
-                &title,
+                title,
                 init_matches.value_of("summary"),
                 tags,
             )?;
         }
         Some(("publish", _publish_matches)) => {
-            content::Page::publish(content::Kind::Post, &title)?;
+            content::Page::publish(content::Kind::Post, title)?;
         }
         Some(("edit", _edit_matches)) => {
-            content::Page::edit(content::Kind::Post, &title)?;
+            content::Page::edit(content::Kind::Post, title)?;
         }
         _ => {}
     }

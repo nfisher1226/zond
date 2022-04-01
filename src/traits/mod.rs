@@ -49,7 +49,7 @@ impl ToDisk for Feed {
             }
             Err(_) => {
                 let atom = self.to_string();
-                let atom = atom.replace(">", ">\n");
+                let atom = atom.replace('>', ">\n");
                 std::fs::write(path, &atom)?;
             }
         }

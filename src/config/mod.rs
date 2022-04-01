@@ -38,7 +38,7 @@ pub struct Person {
 }
 
 impl Person {
-    pub fn into_atom(&self) -> atom::Person {
+    pub fn to_atom(&self) -> atom::Person {
         atom::Person {
             name: self.name.clone(),
             email: self.email.clone(),

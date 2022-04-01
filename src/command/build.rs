@@ -142,55 +142,49 @@ impl Capsule {
         let mut gemlog_index = current.clone();
         gemlog_index.push("gemlog");
         gemlog_index.push("index.gmi");
-        for entry in WalkDir::new("content") {
-            if let Ok(entry) = entry {
-                let path = PathBuf::from(entry.path());
-                let path = std::fs::canonicalize(&path)?;
-                let last = path.strip_prefix(&current)?;
-                if let Some(n) = last.to_str() {
-                    if n == "index.gmi" || n == "gemlog/index.gmi" {
-                        continue;
-                    }
+        for entry in WalkDir::new("content").into_iter().flatten() {
+            let path = PathBuf::from(entry.path());
+            let path = std::fs::canonicalize(&path)?;
+            let last = path.strip_prefix(&current)?;
+            if let Some(n) = last.to_str() {
+                if n == "index.gmi" || n == "gemlog/index.gmi" {
+                    continue;
                 }
-                let mut output = output.to_path_buf();
-                output.push(&last);
-                if let Some(s) = path.extension() {
-                    if let Some("gmi") = s.to_str() {
-                        if let Some(page) = Page::from_path(&path) {
-                            if let Some(ref time) = page.meta.published {
-                                if &path != &index && &path != &gemlog_index {
-                                    let depth = entry.depth();
-                                    let link = Link::get(&path, cfg, &page.meta)?;
-                                    for tag in &page.meta.tags {
-                                        if let Some(t) = tags.get_mut(tag) {
-                                            t.push(link.clone());
-                                        } else {
-                                            tags.insert(tag.to_string(), vec![link.clone()]);
-                                        }
-                                    }
-                                    if last.starts_with("gemlog") {
-                                        page.render(cfg, &output, depth)?;
-                                        let post = Post {
-                                            link,
-                                            meta: page.meta.clone(),
-                                        };
-                                        posts.insert(time.timestamp()?, post);
+            }
+            let mut output = output.to_path_buf();
+            output.push(&last);
+            if let Some(s) = path.extension() {
+                if let Some("gmi") = s.to_str() {
+                    if let Some(page) = Page::from_path(&path) {
+                        if let Some(ref time) = page.meta.published {
+                            if path != index && path != gemlog_index {
+                                let depth = entry.depth();
+                                let link = Link::get(&path, cfg, &page.meta)?;
+                                for tag in &page.meta.tags {
+                                    if let Some(t) = tags.get_mut(tag) {
+                                        t.push(link.clone());
                                     } else {
-                                        page.render(cfg, &output, depth)?;
+                                        tags.insert(tag.to_string(), vec![link.clone()]);
                                     }
+                                }
+                                if last.starts_with("gemlog") {
+                                    page.render(cfg, &output, depth)?;
+                                    let post = Post {
+                                        link,
+                                        meta: page.meta.clone(),
+                                    };
+                                    posts.insert(time.timestamp()?, post);
+                                } else {
+                                    page.render(cfg, &output, depth)?;
                                 }
                             }
                         }
-                    } else {
-                        if entry.file_type().is_file() {
-                            std::fs::copy(&path, &output)?;
-                        }
                     }
-                } else {
-                    if entry.file_type().is_file() {
-                        std::fs::copy(&path, &output)?;
-                    }
+                } else if entry.file_type().is_file() {
+                    std::fs::copy(&path, &output)?;
                 }
+            } else if entry.file_type().is_file() {
+                std::fs::copy(&path, &output)?;
             }
         }
         Ok(Self { posts, tags })
@@ -214,12 +208,12 @@ impl Capsule {
         };
         let mut url = cfg.url()?;
         if let Some(p) = &cfg.path {
-            url.set_path(&p);
+            url.set_path(p);
         }
         let feed = atom::FeedBuilder::default()
             .title(cfg.title.to_string())
             .id(url.to_string())
-            .author(cfg.author.into_atom())
+            .author(cfg.author.to_atom())
             .rights(atom::Text::plain(format!(
                 "© {} by {}",
                 year, &cfg.author.name
@@ -242,7 +236,7 @@ impl Capsule {
             url.set_path(&path.to_string_lossy());
             page.push_str(&format!(
                 "=> {} {} - {}\n",
-                url.to_string(),
+                url,
                 entry.meta.published.as_ref().unwrap().date_string(),
                 &entry.meta.title,
             ));
@@ -252,7 +246,7 @@ impl Capsule {
 
     /// Creates a gemtext page for each tag and an index page of all tags
     fn render_tags(&self, cfg: &Config, output: &Path) -> Result<(), Box<dyn Error>> {
-        let index_path = Index::get_path(&mut output.to_path_buf(), Some(&PathBuf::from("tags")));
+        let index_path = Index::get_path(output, Some(&PathBuf::from("tags")));
         let base_url = cfg.url()?;
         let tags_url = base_url.join("tags/")?;
         let mut index_page = format!("# {}\n\n### All tags\n", &cfg.title);
@@ -280,7 +274,7 @@ impl Capsule {
             if let Some(ref license) = cfg.license {
                 page.push_str(&format!(
                     "All content for this site is release under the {} license.\n",
-                    license.to_string(),
+                    license,
                 ));
             }
             page.push_str(&format!(
@@ -299,7 +293,7 @@ impl Capsule {
         if let Some(ref license) = cfg.license {
             index_page.push_str(&format!(
                 "All content for this site is release under the {} license.\n",
-                license.to_string(),
+                license,
             ));
         }
         index_page.push_str(&format!(
@@ -345,7 +339,7 @@ impl Capsule {
         if let Some(ref license) = cfg.license {
             content.push_str(&format!(
                 "\n\nAll content for this site is release under the {} license.\n",
-                license.to_string(),
+                license,
             ));
         }
         content.push_str(&format!(
@@ -358,7 +352,7 @@ impl Capsule {
                 content.push_str(&format!("=> mailto:{} Contact\n", email,));
             }
         }
-        let path = Index::get_path(&mut PathBuf::from(output), None);
+        let path = Index::get_path(&PathBuf::from(output), None);
         Index(content).to_disk(&path)?;
         Ok(())
     }
@@ -388,20 +382,20 @@ impl Capsule {
         match &cfg.feed {
             Some(crate::config::Feed::Atom) => {
                 content.push_str("\n=> atom.xml Atom Feed\n");
-            },
+            }
             Some(crate::config::Feed::Gemini) => {
                 content.push_str("\n=> feed.gmi Gemini Feed\n");
-            },
+            }
             Some(crate::config::Feed::Both) => {
                 content.push_str("\n=> atom.xml Atom Feed\n=> feed.gmi Gemini Feed\n");
-            },
-            None => {},
+            }
+            None => {}
         }
         content.push_str("\n=> ../tags tags\n=> .. Home\n");
         if let Some(ref license) = cfg.license {
             content.push_str(&format!(
                 "All content for this site is release under the {} license.\n",
-                license.to_string(),
+                license,
             ));
         }
         content.push_str(&format!(
@@ -414,7 +408,7 @@ impl Capsule {
                 content.push_str(&format!("=> mailto:{} Contact\n", email,));
             }
         }
-        let path = Index::get_path(&mut PathBuf::from(output), Some(&PathBuf::from("gemlog")));
+        let path = Index::get_path(&PathBuf::from(output), Some(&PathBuf::from("gemlog")));
         Index(content).to_disk(&path)?;
         Ok(())
     }

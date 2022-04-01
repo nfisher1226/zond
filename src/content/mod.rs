@@ -79,23 +79,13 @@ impl Meta {
 
     /// Given the title and `Kind` of this item, returns the path to the source file
     pub fn get_path(title: &str, kind: Kind) -> PathBuf {
-        let mut tpath = title.trim().to_lowercase().replace(" ", "_");
+        let mut tpath = title.trim().to_lowercase().replace(' ', "_");
         tpath.push_str(".gmi");
-        let file = match kind {
+        match kind {
             Kind::Page(Some(path)) => path,
-            Kind::Page(None) => {
-                let mut path = PathBuf::from("content");
-                path.push(Path::new(&tpath));
-                path
-            }
-            Kind::Post => {
-                let mut path = PathBuf::from("content");
-                path.push("gemlog");
-                path.push(Path::new(&tpath));
-                path
-            }
-        };
-        file
+            Kind::Page(None) => ["content", &tpath].iter().collect(),
+            Kind::Post => ["content", "gemlog", &tpath].iter().collect(),
+        }
     }
 
     /// Generates an atom feed entry for this post
@@ -110,13 +100,13 @@ impl Meta {
         let mut link = atom::Link::default();
         link.set_href(&url);
         link.set_rel("alternate");
-        let author = config.author.into_atom();
+        let author = config.author.to_atom();
         let entry = atom::EntryBuilder::default()
             .title(self.title.clone())
             .id(url)
             .updated(self.published.as_ref().unwrap().to_date_time()?)
             .authors(vec![author])
-            .categories(self.categories(&config)?)
+            .categories(self.categories(config)?)
             .link(link)
             .published(self.published.as_ref().unwrap().to_date_time()?)
             .rights(atom::Text::plain(format!(
@@ -124,7 +114,7 @@ impl Meta {
                 self.published.as_ref().unwrap().year(),
                 &config.author.name
             )))
-            .summary(self.summary.as_ref().map(|t| atom::Text::plain(t)))
+            .summary(self.summary.as_ref().map(atom::Text::plain))
             .build();
         Ok(entry)
     }
@@ -153,7 +143,7 @@ impl ToDisk for Page {
 
 impl Page {
     /// Retreive a `Page` given it's path
-    pub fn from_path(file: &PathBuf) -> Option<Self> {
+    pub fn from_path(file: &Path) -> Option<Self> {
         match fs::read_to_string(file) {
             Ok(f) => {
                 let mut extractor = Extractor::new(&f);
@@ -177,7 +167,7 @@ impl Page {
         summary: Option<&str>,
         tags: Vec<String>,
     ) -> Result<PathBuf, Box<dyn Error>> {
-        let mut tpath = title.trim().to_lowercase().replace(" ", "_");
+        let mut tpath = title.trim().to_lowercase().replace(' ', "_");
         tpath.push_str(".gmi");
         let file = match kind {
             Kind::Page(Some(path)) => path,
@@ -263,7 +253,7 @@ impl Page {
         if let Some(license) = &cfg.license {
             page.push_str(&format!(
                 "All content for this site is released under the {} license.\n",
-                license.to_string(),
+                license,
             ));
         }
         page.push_str(&format!(

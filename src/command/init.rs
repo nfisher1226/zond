@@ -1,10 +1,7 @@
 use {
     crate::{
         config::{Config, Feed},
-        content::{
-            Meta,
-            Page,
-        },
+        content::{Meta, Page},
         traits::ToDisk,
     },
     clap::ArgMatches,
