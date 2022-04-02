@@ -1,10 +1,14 @@
 # Vostok
-Running concurrently to NASA's project Mercury, the Soviet *Vostok*, or if you
-prefer the original Russian, *Восток* project was a human spaceflight program
-with the goal of putting the first human into low earth orbit and returning them
-safely. Yuri Gagarin in fact became the first human to do so on April 12th, 1961.
+Zond (Russian: Зонд, lit. 'probe') was the name given to two distinct series of
+Soviet robotic spacecraft launched between 1964 and 1970. The first series, based
+on the 3MV planetary probe, was intended to gather information about nearby
+planets. The second series of test spacecraft was intended as a precursor to
+remote-controlled robotic circumlunar loop flights, using a stripped-down variant
+of Soyuz spacecraft, consisting of the service and descent modules, but lacking
+the orbital module. Two tortoises and other lifeforms aboard Zond 5 were the first
+terrestrial organisms to travel around the Moon and return to Earth.
 
-In this context, Vostok is a static gemini capsule generator, think static site
+In this context, Zond is a static gemini capsule generator. Think static site
 generator like Hugo or Jekyll but for [Project Gemini](https://gemini.circumlunar.space).
 
 ## Building

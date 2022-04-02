@@ -1,12 +1,12 @@
 # Usage
 ## Initializing a new capsule
 ```sh
-vostok init
+zond init
 ```
 The `init` subcommand can optionally take a number of arguments to preset some
 variables in `Config.ron`. To see the full list, run:
 ```sh
-vostok help init
+zond help init
 ```
 ### An example `Config.ron`
 ```

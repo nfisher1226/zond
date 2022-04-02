@@ -2,7 +2,7 @@ use clap::{Arg, ArgGroup, Command};
 
 /// Generates the command line options
 pub fn build() -> Command<'static> {
-    Command::new("vostok")
+    Command::new("zond")
         .about("A static Gemini capsule generator")
         .subcommand_required(true)
         .arg_required_else_help(true)
