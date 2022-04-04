@@ -1,4 +1,4 @@
-# Vostok
+# Zond
 Zond (Russian: Зонд, lit. 'probe') was the name given to two distinct series of
 Soviet robotic spacecraft launched between 1964 and 1970. The first series, based
 on the 3MV planetary probe, was intended to gather information about nearby
@@ -15,11 +15,11 @@ generator like Hugo or Jekyll but for [Project Gemini](https://gemini.circumluna
 ```sh
 cargo build --release
 ```
-In addition to outputting a binary at `<cwd>/target/release/vostok`, there will be
-completion scripts generated for the Bash, Zsh, Fish and Powershell scripts. See
-the terminal output for where they are located, and your shell's documentation for
-where to place them.
-
+If desired, a release distribution can then be generated which includes Unix man
+pages and shell completions for bash, fish, posershell and zsh.
+```sh
+cargo xtask dist
+```
 ## Usage
 For full usage information, see the documents in the `doc/` subdirectory of the
 source repository.
