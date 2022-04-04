@@ -75,6 +75,23 @@ fn manpages() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn copy_bin() -> Result<(), Box<dyn Error>> {
+    println!("Copying binary:");
+    let bindir: PathBuf = ["target", "dist", "bin"].iter().collect();
+    if !bindir.exists() {
+        fs::create_dir_all(&bindir)?;
+    }
+    let mut outfile = bindir;
+    outfile.push("zond");
+    let infile: PathBuf = ["target", "release", "zond"].iter().collect();
+    if !infile.exists() {
+        eprintln!("Error: you must run \"cargo build --release\" first");
+    }
+    fs::copy(&infile, &outfile)?;
+    println!("    {} -> {}", infile.display(), outfile.display());
+    Ok(())
+}
+
 fn usage() {
     println!("Usage: xtask dist");
 }
@@ -90,6 +107,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         if outdir.exists() {
             fs::remove_dir_all(&outdir)?;
         }
+        copy_bin()?;
         completions()?;
         manpages()?;
     } else {
