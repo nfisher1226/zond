@@ -53,7 +53,7 @@ impl Meta {
         self.published = Some(Time::now());
     }
 
-    /// Returns a `Vec` of atom_syndication::Categories from the tags of this item
+    /// Returns a `Vec` of `atom_syndication::Categories` from the tags of this item
     fn categories(&self, cfg: &Config) -> Result<Vec<atom::Category>, Box<dyn Error>> {
         let mut categories = Vec::new();
         for tag in &self.tags {
@@ -189,7 +189,7 @@ impl Page {
         }
         let meta = Meta {
             title: title.to_string(),
-            summary: summary.map(|x| x.to_string()),
+            summary: summary.map(std::string::ToString::to_string),
             published: None,
             tags,
         };

@@ -5,7 +5,7 @@ use {
 };
 
 #[derive(Clone, Debug, Deserialize, PartialEq, PartialOrd, Serialize)]
-/// Conversion middleman because chrono::DateTime does not support serde
+/// Conversion middleman because `chrono::DateTime` does not support serde
 pub struct Time {
     year: i32,
     month: u32,
@@ -52,7 +52,7 @@ impl Time {
         )
     }
 
-    /// Converts to chrono's DateTime format
+    /// Converts to chrono's `DateTime` format
     pub fn to_date_time(&self) -> Result<DateTime<FixedOffset>, ParseError> {
         DateTime::parse_from_rfc3339(&self.to_rfc_3339())
     }

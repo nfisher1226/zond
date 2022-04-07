@@ -23,9 +23,9 @@ struct Post {
     meta: Meta,
     link: Link,
 }
-/// A BTreeMap of gemlog posts
+/// A `BTreeMap` of gemlog posts
 type Posts = BTreeMap<i64, Post>;
-/// A HashMap of tag names and their associated links
+/// A `HashMap` of tag names and their associated links
 type Tags = HashMap<String, Vec<Link>>;
 
 #[derive(Clone, Debug, Default)]

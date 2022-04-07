@@ -72,18 +72,48 @@ impl Config {
     /// Load the config from disk
     pub fn load() -> Result<Self, Box<dyn Error>> {
         let cfg_file = PathBuf::from("Config.ron");
-        let cfg_file = fs::read_to_string(cfg_file).unwrap();
+        let cfg_file = match fs::read_to_string(cfg_file) {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("Error reading config file");
+                return Err(e.into());
+            }
+        };
         match ron::de::from_str(&cfg_file) {
             Ok(s) => Ok(s),
-            Err(e) => Err(e.into()),
+            Err(e) => {
+                eprintln!(
+                    "Error decoding config:\n  code: {:?}\n  position:\n    line: {}\n    column: {}",
+                    e.code,
+                    e.position.line,
+                    e.position.col,
+                );
+                Err(e.into())
+            }
         }
     }
 
     /// Save the config to disk
     pub fn save(&self) -> Result<(), Box<dyn Error>> {
-        let ron_str = to_string_pretty(&self, PrettyConfig::new())?;
-        fs::write(&PathBuf::from("Config.ron"), ron_str)?;
-        Ok(())
+        let ron_str = match to_string_pretty(&self, PrettyConfig::new()) {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!(
+                    "Error encoding config:\n  code: {:?}\n  position:\n    line: {}\n    column: {}",
+                    e.code,
+                    e.position.line,
+                    e.position.col,
+                );
+                return Err(e.into());
+            }
+        };
+        match fs::write(&PathBuf::from("Config.ron"), ron_str) {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                eprintln!("Error writing config file");
+                Err(e.into())
+            }
+        }
     }
 
     /// Returns the address for the root of this capsule
@@ -92,7 +122,13 @@ impl Config {
         if let Some(p) = &self.path {
             path.push(p);
         }
-        let mut url = Url::parse(&format!("gemini://{}", &self.domain))?;
+        let mut url = match Url::parse(&format!("gemini://{}", &self.domain)) {
+            Ok(u) => u,
+            Err(e) => {
+                eprintln!("Error parsing url from config data");
+                return Err(e.into());
+            }
+        };
         url.set_path(&format!("{}", path.display()));
         Ok(url)
     }

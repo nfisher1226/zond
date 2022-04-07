@@ -38,7 +38,13 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     }
     cfg.path = matches.value_of("path").map(|x| x.to_string());
     if let Some(e) = matches.value_of("entries") {
-        cfg.entries = e.parse()?;
+        cfg.entries = match e.parse() {
+            Ok(n) => n,
+            Err(e) => {
+                eprintln!("Error parsing number for entry display: invalid string");
+                return Err(e.into());
+            }
+        };
     }
     if let Some(f) = matches.value_of("feed") {
         match f {
@@ -52,7 +58,13 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         cfg.license = Some(l.into());
     }
     if let Some(e) = matches.value_of("show_email") {
-        cfg.show_email = e.parse()?;
+        cfg.show_email = match e.parse() {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("Error parsing input: invalid boolean");
+                return Err(e.into());
+            }
+        };
     }
     if !cfg_file.exists() {
         cfg.save()?;
@@ -60,7 +72,10 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let mut gemlog = PathBuf::from("content");
     gemlog.push("gemlog");
     if !gemlog.exists() {
-        std::fs::create_dir_all(&gemlog)?;
+        if let Err(e) = std::fs::create_dir_all(&gemlog) {
+            eprintln!("Error creating gemlog content directory");
+            return Err(e.into());
+        }
     }
     let mut idx: PathBuf = ["content", "index.gmi"].iter().collect();
     let mut idx_page = Page {
