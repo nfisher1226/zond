@@ -1,6 +1,8 @@
 #![doc = include_str!("../README.md")]
 /// Generates the command line options struct
 mod cli;
+/// Adds an ascii banner to each page (if the file banner.txt exists)
+pub(crate) mod banner;
 /// Parses out the subcommands from the cli
 pub(crate) mod command;
 /// Holds the capsule level configuration

@@ -122,6 +122,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
 struct Capsule {
     posts: Posts,
     tags: Tags,
+    banner: Option<String>,
 }
 
 impl Capsule {
@@ -142,6 +143,14 @@ impl Capsule {
         let mut gemlog_index = current.clone();
         gemlog_index.push("gemlog");
         gemlog_index.push("index.gmi");
+        let banner = match crate::banner::get() {
+            Some(Ok(s)) => Some(s.trim_end().to_string()),
+            Some(Err(e)) => {
+                eprintln!("Error reading banner file");
+                return Err(e.into());
+            },
+            None => None,
+        };
         for entry in WalkDir::new("content").into_iter().flatten() {
             let path = PathBuf::from(entry.path());
             let path = std::fs::canonicalize(&path)?;
@@ -168,14 +177,14 @@ impl Capsule {
                                     }
                                 }
                                 if last.starts_with("gemlog") {
-                                    page.render(cfg, &output, depth)?;
+                                    page.render(cfg, &output, depth, &banner)?;
                                     let post = Post {
                                         link,
                                         meta: page.meta.clone(),
                                     };
                                     posts.insert(time.timestamp()?, post);
                                 } else {
-                                    page.render(cfg, &output, depth)?;
+                                    page.render(cfg, &output, depth, &banner)?;
                                 }
                             }
                         }
@@ -187,7 +196,7 @@ impl Capsule {
                 std::fs::copy(&path, &output)?;
             }
         }
-        Ok(Self { posts, tags })
+        Ok(Self { posts, tags, banner })
     }
 
     /// Generates an Atom feed from the metadata
@@ -249,7 +258,10 @@ impl Capsule {
         let index_path = Index::get_path(output, Some(&PathBuf::from("tags")));
         let base_url = cfg.url()?;
         let tags_url = base_url.join("tags/")?;
-        let mut index_page = format!("# {}\n\n### All tags\n", &cfg.title);
+        let mut index_page = match &self.banner {
+            Some(s) => format!("```\n{}\n```# {}\n\n### All tags\n", s, &cfg.title),
+            None => format!("# {}\n\n### All tags\n", &cfg.title),
+        };
         let mut dest = PathBuf::from(output);
         dest.push("tags");
         if !dest.exists() {
@@ -260,7 +272,10 @@ impl Capsule {
             let mut dest = dest.clone();
             dest.push(tag);
             dest.set_extension("gmi");
-            let mut page = format!("# {}\n\n### Pages tagged {}\n", &cfg.title, &tag);
+            let mut page = match &self.banner {
+                Some(s) => format!("```\n{}\n```# {}\n\n### Pages tagged {}\n", s, &cfg.title, &tag),
+                None => format!("# {}\n\n### Pages tagged {}\n", &cfg.title, &tag),
+            };
             for link in links {
                 let url = if let Some(u) = tags_url.make_relative(&Url::parse(&link.url)?) {
                     Cow::from(u.to_string())
@@ -320,7 +335,10 @@ impl Capsule {
             idx.content.push_str("{% posts %}");
             idx
         };
-        let mut content = format!("# {}\n\n", &cfg.title);
+        let mut content = match &self.banner {
+            Some(s) => format!("```\n{}\n```# {}\n\n", s, &cfg.title),
+            None => format!("# {}\n\n", &cfg.title),
+        };
         content.push_str(&page.content);
         let mut posts = String::from("### Gemlog posts\n");
         let num = std::cmp::min(cfg.entries, self.posts.len());
@@ -365,7 +383,10 @@ impl Capsule {
         } else {
             Page::default()
         };
-        let mut content = format!("# {}\n\n", &cfg.title);
+        let mut content = match &self.banner {
+            Some(s) => format!("```\n{}\n```# {}\n\n", s, &cfg.title),
+            None => format!("# {}\n\n", &cfg.title),
+        };
         content.push_str(&page.content);
         content.push_str("\n\n### Gemlog posts\n");
         let base = cfg.url()?;

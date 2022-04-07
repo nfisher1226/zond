@@ -226,13 +226,28 @@ impl Page {
     }
 
     /// Render a page and save it to disk
-    pub fn render(&self, cfg: &Config, path: &Path, depth: usize) -> Result<(), Box<dyn Error>> {
-        let mut page = format!(
-            "# {}\n### {}\n{}\n\n",
-            self.meta.title,
-            self.meta.published.as_ref().unwrap().date_string(),
-            self.content
-        );
+    pub fn render(
+        &self,
+        cfg: &Config,
+        path: &Path,
+        depth: usize,
+        banner: &Option<String>
+    ) -> Result<(), Box<dyn Error>> {
+        let mut page = match banner {
+            Some(s) => format!(
+                "```\n{}\n```\n# {}\n### {}\n{}\n\n",
+                s,
+                self.meta.title,
+                self.meta.published.as_ref().unwrap().date_string(),
+                self.content
+            ),
+            None => format!(
+                "# {}\n### {}\n{}\n\n",
+                self.meta.title,
+                self.meta.published.as_ref().unwrap().date_string(),
+                self.content
+            )
+        };
         page.push_str(&format!(
             "=> {} Home\n",
             match depth {
