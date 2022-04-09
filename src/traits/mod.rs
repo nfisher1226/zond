@@ -2,10 +2,11 @@ use {
     atom_syndication::Feed,
     std::{
         error::Error,
-        io::Write,
+        io::{BufReader, Write},
+        fs::File,
         path::{Path, PathBuf},
-        process::Stdio,
     },
+    xml::{EmitterConfig, EventReader}
 };
 
 /// Saves a content type to disk
@@ -32,48 +33,20 @@ impl ToDisk for Feed {
                 }
             }
         }
-        if let Ok(mut child) = std::process::Command::new("xmllint")
-            .args(["-", "--pretty", "1"])
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn()
-        {
-            if let Err(e) = child
-                .stdin
-                .as_mut()
-                .unwrap()
-                .write_all(self.to_string().as_bytes()) {
-                eprintln!("Error writing atom feed to xmllint stdin");
-                eprintln!("  Error occured in trait `ToDisk` for `atom_syndication::Feed`");
-                return Err(e.into());
+        let ir = self.to_string();
+        let reader = BufReader::new(ir.as_bytes());
+        let parser = EventReader::new(reader);
+        let mut outfd = File::create(path)?;
+        let mut writer = EmitterConfig::new()
+            .perform_indent(true)
+            .create_writer(&mut outfd);
+        parser.into_iter().for_each(|e| {
+            if let Ok(e) = e {
+                e.as_writer_event().map(|x| writer.write(x));
             }
-            let output = match child.wait_with_output() {
-                Ok(o) => o,
-                Err(e) => {
-                    eprintln!("Error getting child process output");
-                    eprintln!("  Error occurred in trait `ToDisk` for `atom_syndication::Feed`");
-                    return Err(e.into());
-                }
-            };
-            let atom = String::from_utf8_lossy(&output.stdout);
-            match std::fs::write(path, &String::from(atom)) {
-                Ok(_) => Ok(()),
-                Err(e) => {
-                    eprintln!("Error writing atom feed to disk");
-                    Err(e.into())
-                }
-            }
-        } else {
-            let atom = self.to_string();
-            let atom = atom.replace('>', ">\n");
-            match std::fs::write(path, &atom) {
-                Ok(_) => Ok(()),
-                Err(e) => {
-                    eprintln!("Error writing atom feed to disk");
-                    Err(e.into())
-                }
-            }
-        }
+        });
+        outfd.write_all(b"\n")?;
+        Ok(())
     }
 }
 
