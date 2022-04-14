@@ -162,6 +162,11 @@ impl Capsule {
             }
             let mut output = output.to_path_buf();
             output.push(&last);
+            if let Some(parent) = output.parent() {
+                if !parent.exists() {
+                    std::fs::create_dir_all(parent)?;
+                }
+            }
             if let Some(s) = path.extension() {
                 if let Some("gmi") = s.to_str() {
                     if let Some(page) = Page::from_path(&path) {

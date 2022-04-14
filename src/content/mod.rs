@@ -2,6 +2,8 @@
 pub mod index;
 /// Date and time functionality
 mod time;
+/// Get an appropriate editor
+mod editor;
 
 pub use time::Time;
 use {
@@ -11,11 +13,9 @@ use {
     ron::ser::{to_string_pretty, PrettyConfig},
     serde::{Deserialize, Serialize},
     std::{
-        env,
         error::Error,
         fs,
         path::{Path, PathBuf},
-        process::Command,
     },
     url::Url,
 };
@@ -214,14 +214,7 @@ impl Page {
     /// Open a `Page` in your editor
     pub fn edit(kind: Kind, title: &str) -> Result<(), Box<dyn Error>> {
         let path = Meta::get_path(title, kind);
-        match env::var("EDITOR") {
-            Ok(ed) => {
-                Command::new(ed)
-                    .arg(&format!("{}", path.display()))
-                    .status()?;
-            }
-            Err(_) => mime_open::open(&format!("{}", path.display()))?,
-        }
+        editor::edit(&format!("{}", path.display()))?;
         Ok(())
     }
 

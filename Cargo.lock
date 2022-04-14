@@ -245,12 +245,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "308cc39be01b73d0d18f82a0e7b2a3df85245f84af96fdddc5d202d27e47b86a"
 
 [[package]]
-name = "mime_open"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa45a708f9c618eca4d5f60449a161ab1dc5542e41d459c419597ea58d853b68"
-
-[[package]]
 name = "never"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -511,7 +505,6 @@ dependencies = [
  "chrono",
  "clap",
  "extract-frontmatter",
- "mime_open",
  "ron",
  "serde",
  "url",
