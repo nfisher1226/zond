@@ -15,11 +15,14 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
                 None => Vec::new(),
             };
             content::Page::create(
-                content::Kind::Page(path),
+                content::Kind::Page(path.clone()),
                 title,
                 init_matches.value_of("summary"),
                 tags,
             )?;
+            if init_matches.is_present("edit") {
+                content::Page::edit(content::Kind::Page(path), title)?;
+            }
         }
         Some(("publish", _publish_matches)) => {
             content::Page::publish(content::Kind::Page(path), title)?;

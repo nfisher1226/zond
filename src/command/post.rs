@@ -18,6 +18,9 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
                 init_matches.value_of("summary"),
                 tags,
             )?;
+            if init_matches.is_present("edit") {
+                content::Page::edit(content::Kind::Post, title)?;
+            }
         }
         Some(("publish", _publish_matches)) => {
             content::Page::publish(content::Kind::Post, title)?;

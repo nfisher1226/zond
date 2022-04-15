@@ -116,6 +116,15 @@ pub fn post_init() -> Command<'static> {
                 .multiple_values(true)
                 .required(false),
         )
+        .arg(
+            Arg::new("edit")
+                .help("Edit the newly created post")
+                .short('e')
+                .long("edit")
+                .takes_value(false)
+                .multiple_values(false)
+                .required(false)
+        )
 }
 
 pub fn post() -> Command<'static> {
@@ -160,6 +169,15 @@ pub fn page_init() -> Command<'static> {
                 .takes_value(true)
                 .multiple_values(true)
                 .required(false),
+        )
+        .arg(
+            Arg::new("edit")
+                .help("Edit the newly created page")
+                .short('e')
+                .long("edit")
+                .takes_value(false)
+                .multiple_values(false)
+                .required(false)
         )
 }
 
