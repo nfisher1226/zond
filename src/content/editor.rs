@@ -1,8 +1,4 @@
-use std::{
-    env,
-    error::Error,
-    process::Command,
-};
+use std::{env, error::Error, process::Command};
 
 /// Open the given uri in an appropriate program
 pub fn edit(file: &str) -> Result<(), Box<dyn Error>> {

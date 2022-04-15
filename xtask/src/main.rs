@@ -8,7 +8,7 @@ include!("../../src/cli.rs");
 
 fn completions() -> Result<(), Box<dyn Error>> {
     println!("Generating completions:");
-    let mut cmd = build();
+    let mut cmd = zond();
     let outdir: PathBuf = ["target", "dist", "share", "bash-completion", "completions"]
         .iter()
         .collect();
@@ -47,11 +47,13 @@ fn completions() -> Result<(), Box<dyn Error>> {
 
 fn manpage(cmd: &str) -> Result<(), Box<dyn Error>> {
     let (fname, cmd) = match cmd {
-        "zond-build" => ("zond-build.1", build_build()),
-        "zond-init" => ("zond-init.1", build_init()),
-        "zond-page" => ("zond-page.1", build_page()),
-        "zond-post" => ("zond-post.1", build_post()),
-        _ => ("zond.1", build()),
+        "zond-build" => ("zond-build.1", build()),
+        "zond-init" => ("zond-init.1", init()),
+        "zond-page" => ("zond-page.1", page()),
+        "zond-post" => ("zond-post.1", post()),
+        "zond-page-init" => ("zond-page-init.1", page_init()),
+        "zond-post-init" => ("zond-post-init.1", post_init()),
+        _ => ("zond.1", zond()),
     };
     let outdir: PathBuf = ["target", "dist", "share", "man", "man1"].iter().collect();
     if !outdir.exists() {
@@ -69,7 +71,7 @@ fn manpage(cmd: &str) -> Result<(), Box<dyn Error>> {
 
 fn manpages() -> Result<(), Box<dyn Error>> {
     println!("Generating man pages:");
-    ["zond", "zond-build", "zond-init", "zond-page", "zond-post"]
+    ["zond", "zond-build", "zond-init", "zond-page", "zond-post", "zond-page-init", "zond-post-init"]
         .iter()
         .try_for_each(|cmd| manpage(cmd))?;
     Ok(())

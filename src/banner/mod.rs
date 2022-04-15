@@ -1,6 +1,4 @@
-use {
-    std::{ fs, io::Error, path::PathBuf }
-};
+use std::{fs, io::Error, path::PathBuf};
 
 pub fn get() -> Option<Result<String, Error>> {
     let path = PathBuf::from("banner.txt");

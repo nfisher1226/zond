@@ -148,7 +148,7 @@ impl Capsule {
             Some(Err(e)) => {
                 eprintln!("Error reading banner file");
                 return Err(e.into());
-            },
+            }
             None => None,
         };
         for entry in WalkDir::new("content").into_iter().flatten() {
@@ -201,7 +201,11 @@ impl Capsule {
                 std::fs::copy(&path, &output)?;
             }
         }
-        Ok(Self { posts, tags, banner })
+        Ok(Self {
+            posts,
+            tags,
+            banner,
+        })
     }
 
     /// Generates an Atom feed from the metadata
@@ -278,7 +282,10 @@ impl Capsule {
             dest.push(tag);
             dest.set_extension("gmi");
             let mut page = match &self.banner {
-                Some(s) => format!("```\n{}\n```# {}\n\n### Pages tagged {}\n", s, &cfg.title, &tag),
+                Some(s) => format!(
+                    "```\n{}\n```# {}\n\n### Pages tagged {}\n",
+                    s, &cfg.title, &tag
+                ),
                 None => format!("# {}\n\n### Pages tagged {}\n", &cfg.title, &tag),
             };
             for link in links {

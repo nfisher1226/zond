@@ -1,9 +1,9 @@
+/// Get an appropriate editor
+mod editor;
 /// Working with the main and gemlog indexes
 pub mod index;
 /// Date and time functionality
 mod time;
-/// Get an appropriate editor
-mod editor;
 
 pub use time::Time;
 use {
@@ -224,7 +224,7 @@ impl Page {
         cfg: &Config,
         path: &Path,
         depth: usize,
-        banner: &Option<String>
+        banner: &Option<String>,
     ) -> Result<(), Box<dyn Error>> {
         let mut page = match banner {
             Some(s) => format!(
@@ -239,7 +239,7 @@ impl Page {
                 self.meta.title,
                 self.meta.published.as_ref().unwrap().date_string(),
                 self.content
-            )
+            ),
         };
         page.push_str(&format!(
             "=> {} Home\n",

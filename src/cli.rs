@@ -1,6 +1,6 @@
 use clap::{Arg, ArgGroup, Command};
 
-pub fn build_init() -> Command<'static> {
+pub fn init() -> Command<'static> {
     Command::new("init")
         .about("Initialize a new capsule")
         .arg(
@@ -84,7 +84,7 @@ pub fn build_init() -> Command<'static> {
         )
 }
 
-pub fn build_build() -> Command<'static> {
+pub fn build() -> Command<'static> {
     Command::new("build").about("Build the capsule").arg(
         Arg::new("output")
             .short('o')
@@ -95,16 +95,39 @@ pub fn build_build() -> Command<'static> {
     )
 }
 
-pub fn build_post() -> Command<'static> {
+pub fn post_init() -> Command<'static> {
+    Command::new("init")
+        .about("Initializes a new post")
+        .arg(
+            Arg::new("summary")
+                .help("A short summary of the post (optional)")
+                .short('s')
+                .long("summary")
+                .takes_value(true)
+                .multiple_values(false)
+                .required(false),
+        )
+        .arg(
+            Arg::new("tags")
+                .help("Tags for this post (optional)")
+                .short('t')
+                .long("tags")
+                .takes_value(true)
+                .multiple_values(true)
+                .required(false),
+        )
+}
+
+pub fn post() -> Command<'static> {
     Command::new("post")
         .about("Manage gemlog posts")
         .long_about(
-"A post is just a page residing in the \"gemlog\" subdirectory, which gets indexed
+            "A post is just a page residing in the \"gemlog\" subdirectory, which gets indexed
 and included in feeds. Posts must be published before they will appear in the
 generated capsule, and will appear in reverse chronoogical order. Posts, like all
 pages, may also be categorized using tags, and a page will be auto generated for
 every tag in the capsule with links to every page and gemlog post which includes
-that tag."
+that tag.",
         )
         .arg(
             Arg::new("title")
@@ -112,43 +135,45 @@ that tag."
                 .takes_value(true)
                 .multiple_values(false),
         )
-        .subcommand(
-            Command::new("init")
-                .about("Initializes a new post")
-                .arg(
-                    Arg::new("summary")
-                        .help("A short summary of the post (optional)")
-                        .short('s')
-                        .long("summary")
-                        .takes_value(true)
-                        .multiple_values(false)
-                        .required(false),
-                )
-                .arg(
-                    Arg::new("tags")
-                        .help("Tags for this post (optional)")
-                        .short('t')
-                        .long("tags")
-                        .takes_value(true)
-                        .multiple_values(true)
-                        .required(false),
-                ),
-        )
+        .subcommand(post_init())
         .subcommand(Command::new("publish").about("Marks the post as published"))
         .subcommand(Command::new("edit").about("Opens the post in an editor"))
 }
 
-pub fn build_page() -> Command<'static> {
+pub fn page_init() -> Command<'static> {
+    Command::new("init")
+        .about("Initializes a new page")
+        .arg(
+            Arg::new("summary")
+                .help("A short summary of the page (optional)")
+                .short('s')
+                .long("summary")
+                .takes_value(true)
+                .multiple_values(false)
+                .required(false),
+        )
+        .arg(
+            Arg::new("tags")
+                .help("Tags for this page (optional)")
+                .short('t')
+                .long("tags")
+                .takes_value(true)
+                .multiple_values(true)
+                .required(false),
+        )
+}
+
+pub fn page() -> Command<'static> {
     Command::new("page")
         .about("Manage pages")
         .long_about(
-"Pages must be published before they will appear in the generated capsule. Pages
+            "Pages must be published before they will appear in the generated capsule. Pages
 may also be categorized using tags, and a page will be auto generated for every
 tag in the capsule with links to every page and gemlog post which includes that
 tag. The special page \"index.gmi\", which is automatically generated when the
 capsule is first generated, will also display a configurable number of gemlog
 post links wherever the string \"{% posts %}\" is placed within it's content
-section."
+section.",
         )
         .arg(
             Arg::new("title")
@@ -172,42 +197,21 @@ section."
                 .args(&["title", "path"])
                 .multiple(true),
         )
-        .subcommand(
-            Command::new("init")
-                .about("Initializes a new page")
-                .arg(
-                    Arg::new("summary")
-                        .help("A short summary of the page (optional)")
-                        .short('s')
-                        .long("summary")
-                        .takes_value(true)
-                        .multiple_values(false)
-                        .required(false),
-                )
-                .arg(
-                    Arg::new("tags")
-                        .help("Tags for this page (optional)")
-                        .short('t')
-                        .long("tags")
-                        .takes_value(true)
-                        .multiple_values(true)
-                        .required(false),
-                ),
-        )
+        .subcommand(page_init())
         .subcommand(Command::new("publish").about("Marks the page as published"))
         .subcommand(Command::new("edit").about("Opens the page in an editor"))
 }
 
 /// Generates the command line options
-pub fn build() -> Command<'static> {
+pub fn zond() -> Command<'static> {
     Command::new("zond")
         .about("A static Gemini capsule generator")
         .author("The JeanG3nie <jeang3nie@hitchhiker-linux.org>")
         .version(env!("CARGO_PKG_VERSION"))
         .subcommand_required(true)
         .arg_required_else_help(true)
-        .subcommand(build_init())
-        .subcommand(build_build())
-        .subcommand(build_post())
-        .subcommand(build_page())
+        .subcommand(init())
+        .subcommand(build())
+        .subcommand(post())
+        .subcommand(page())
 }
