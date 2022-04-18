@@ -18,7 +18,7 @@ impl GetPath for Index {
         if let Some(p) = subdir {
             idx.push(p);
         }
-        idx.push(PathBuf::from("index.gmi"));
+        idx.push("index.gmi");
         idx
     }
 }

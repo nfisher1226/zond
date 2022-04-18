@@ -41,9 +41,7 @@ impl ToDisk for Feed {
         let mut outfd = match File::create(path) {
             Ok(o) => o,
             Err(e) => {
-                eprintln!(
-                    "Error creating file in trait `ToDisk` for `atom_syndication::Feed`"
-                );
+                eprintln!("Error creating file in trait `ToDisk` for `atom_syndication::Feed`");
                 return Err(e.into());
             }
         };
@@ -56,9 +54,7 @@ impl ToDisk for Feed {
             }
         });
         if let Err(e) = outfd.write_all(b"\n") {
-            eprintln!(
-                "Error writing to file in trait `ToDisk` for `atom_syndication::Feed`"
-            );
+            eprintln!("Error writing to file in trait `ToDisk` for `atom_syndication::Feed`");
             return Err(e.into());
         }
         Ok(())

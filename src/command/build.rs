@@ -283,8 +283,8 @@ impl Capsule {
             dest.set_extension("gmi");
             let mut page = match &self.banner {
                 Some(s) => format!(
-                    "```\n{}\n```# {}\n\n### Pages tagged {}\n",
-                    s, &cfg.title, &tag
+                    "```\n{s}\n```# {}\n\n### Pages tagged {}\n",
+                    &cfg.title, &tag
                 ),
                 None => format!("# {}\n\n### Pages tagged {}\n", &cfg.title, &tag),
             };
@@ -294,14 +294,13 @@ impl Capsule {
                 } else {
                     Cow::from(&link.url)
                 };
-                page.push_str(&format!("=> {} {}\n", url, link.display));
+                page.push_str(&format!("=> {url} {}\n", link.display));
             }
             page.push_str("\n=> . All tags\n");
             page.push_str("=> .. Home\n");
             if let Some(ref license) = cfg.license {
                 page.push_str(&format!(
-                    "All content for this site is release under the {} license.\n",
-                    license,
+                    "All content for this site is release under the {license} license.\n"
                 ));
             }
             page.push_str(&format!(
@@ -311,7 +310,7 @@ impl Capsule {
             ));
             if cfg.show_email {
                 if let Some(ref email) = cfg.author.email {
-                    page.push_str(&format!("=> mailto:{} Contact\n", email,));
+                    page.push_str(&format!("=> mailto:{email} Contact\n"));
                 }
             }
             std::fs::write(&dest, &page.as_bytes())?;
@@ -319,8 +318,7 @@ impl Capsule {
         index_page.push_str("\n=> .. Home\n");
         if let Some(ref license) = cfg.license {
             index_page.push_str(&format!(
-                "All content for this site is release under the {} license.\n",
-                license,
+                "All content for this site is release under the {license} license.\n"
             ));
         }
         index_page.push_str(&format!(

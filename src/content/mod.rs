@@ -241,16 +241,16 @@ impl Page {
                 self.content
             ),
         };
-        if self.meta.tags.len() > 0 {
+        if !self.meta.tags.is_empty() {
             page.push_str("### Tags for this page\n");
             for tag in &self.meta.tags {
                 page.push_str(&match depth {
                     1 => format!("=> tags/{tag}.gmi {tag}\n"),
                     2 => format!("=> ../tags/{tag}.gmi {tag}\n"),
                     3 => format!("=> ../../tags/{tag}.gmi {tag}\n"),
-                    _ => format!("=> {}/tags/{tag}.gmi {tag}\n", cfg.url()?.to_string()),
+                    _ => format!("=> {}/tags/{tag}.gmi {tag}\n", cfg.url()?),
                 });
-            };
+            }
             page.push('\n');
         }
         page.push_str(&format!(

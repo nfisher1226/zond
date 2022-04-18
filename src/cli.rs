@@ -123,7 +123,7 @@ pub fn post_init() -> Command<'static> {
                 .long("edit")
                 .takes_value(false)
                 .multiple_values(false)
-                .required(false)
+                .required(false),
         )
 }
 
@@ -177,7 +177,7 @@ pub fn page_init() -> Command<'static> {
                 .long("edit")
                 .takes_value(false)
                 .multiple_values(false)
-                .required(false)
+                .required(false),
         )
 }
 
