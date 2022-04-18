@@ -13,6 +13,7 @@ use {
     ron::ser::{to_string_pretty, PrettyConfig},
     serde::{Deserialize, Serialize},
     std::{
+        borrow::Cow,
         error::Error,
         fs,
         path::{Path, PathBuf},
@@ -228,8 +229,7 @@ impl Page {
     ) -> Result<(), Box<dyn Error>> {
         let mut page = match banner {
             Some(s) => format!(
-                "```\n{}\n```\n# {}\n### {}\n{}\n\n",
-                s,
+                "```\n{s}\n```\n# {}\n### {}\n{}\n\n",
                 self.meta.title,
                 self.meta.published.as_ref().unwrap().date_string(),
                 self.content
@@ -241,12 +241,24 @@ impl Page {
                 self.content
             ),
         };
+        if self.meta.tags.len() > 0 {
+            page.push_str("### Tags for this page\n");
+            for tag in &self.meta.tags {
+                page.push_str(&match depth {
+                    1 => format!("=> tags/{tag}.gmi {tag}\n"),
+                    2 => format!("=> ../tags/{tag}.gmi {tag}\n"),
+                    3 => format!("=> ../../tags/{tag}.gmi {tag}\n"),
+                    _ => format!("=> {}/tags/{tag}.gmi {tag}\n", cfg.url()?.to_string()),
+                });
+            };
+            page.push('\n');
+        }
         page.push_str(&format!(
             "=> {} Home\n",
             match depth {
-                1 => ".".to_string(),
-                2 => "..".to_string(),
-                _ => cfg.url()?.to_string(),
+                1 => Cow::from("."),
+                2 => Cow::from(".."),
+                _ => Cow::from(cfg.url()?.to_string()),
             }
         ));
         if let Some(p) = path.parent() {
@@ -260,8 +272,7 @@ impl Page {
         }
         if let Some(license) = &cfg.license {
             page.push_str(&format!(
-                "All content for this site is released under the {} license.\n",
-                license,
+                "All content for this site is released under the {license} license.\n"
             ));
         }
         page.push_str(&format!(
@@ -271,7 +282,7 @@ impl Page {
         ));
         if cfg.show_email {
             if let Some(ref email) = cfg.author.email {
-                page.push_str(&format!("=> mailto:{} Contact\n", email,));
+                page.push_str(&format!("=> mailto:{email} Contact\n"));
             }
         }
         if let Some(p) = path.parent() {
