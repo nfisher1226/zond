@@ -12,6 +12,7 @@ use {
         borrow::Cow,
         collections::{BTreeMap, HashMap},
         error::Error,
+        fmt::Write,
         path::{Path, PathBuf},
     },
     url::Url,
@@ -252,12 +253,12 @@ impl Capsule {
             let rpath = rpath.strip_prefix("content")?;
             path.push(&rpath);
             url.set_path(&path.to_string_lossy());
-            page.push_str(&format!(
-                "=> {} {} - {}\n",
-                url,
+            writeln!(
+                page,
+                "=> {url} {} - {}",
                 entry.meta.published.as_ref().unwrap().date_string(),
                 &entry.meta.title,
-            ));
+            )?;
         }
         Ok(GemFeed(page))
     }
@@ -277,7 +278,7 @@ impl Capsule {
             std::fs::create_dir_all(&dest)?;
         }
         for (tag, links) in &self.tags {
-            index_page.push_str(&format!("=> {}.gmi {}\n", &tag, &tag));
+            writeln!(index_page, "=> {}.gmi {}", &tag, &tag)?;
             let mut dest = dest.clone();
             dest.push(tag);
             dest.set_extension("gmi");
@@ -294,41 +295,44 @@ impl Capsule {
                 } else {
                     Cow::from(&link.url)
                 };
-                page.push_str(&format!("=> {url} {}\n", link.display));
+                writeln!(page, "=> {url} {}", link.display)?;
             }
-            page.push_str("\n=> . All tags\n");
-            page.push_str("=> .. Home\n");
+            page.push_str("\n=> . All tags\n=> .. Home\n");
             if let Some(ref license) = cfg.license {
-                page.push_str(&format!(
-                    "All content for this site is release under the {license} license.\n"
-                ));
+                writeln!(
+                    page,
+                    "All content for this site is release under the {license} license."
+                )?;
             }
-            page.push_str(&format!(
-                "© {} by {}\n",
+            writeln!(
+                page,
+                "© {} by {}",
                 Utc::now().date().year(),
                 &cfg.author.name
-            ));
+            )?;
             if cfg.show_email {
                 if let Some(ref email) = cfg.author.email {
-                    page.push_str(&format!("=> mailto:{email} Contact\n"));
+                    writeln!(page, "=> mailto:{email} Contact")?;
                 }
             }
             std::fs::write(&dest, &page.as_bytes())?;
         }
         index_page.push_str("\n=> .. Home\n");
         if let Some(ref license) = cfg.license {
-            index_page.push_str(&format!(
-                "All content for this site is release under the {license} license.\n"
-            ));
+            writeln!(
+                index_page,
+                "All content for this site is release under the {license} license."
+            )?;
         }
-        index_page.push_str(&format!(
-            "© {} by {}\n",
+        writeln!(
+            index_page,
+            "© {} by {}",
             Utc::now().date().year(),
             &cfg.author.name
-        ));
+        )?;
         if cfg.show_email {
             if let Some(ref email) = cfg.author.email {
-                index_page.push_str(&format!("=> mailto:{} Contact\n", email,));
+                writeln!(index_page, "=> mailto:{email} Contact")?;
             }
         }
         Index(index_page).to_disk(&index_path)?;
@@ -360,24 +364,25 @@ impl Capsule {
             } else {
                 Cow::from(&post.link.url)
             };
-            posts.push_str(&format!("=> {} {}\n", url, post.link.display,));
+            writeln!(posts, "=> {url} {}", post.link.display)?;
         }
         posts.push_str("=> gemlog/ All posts");
         let mut content = content.replace("{% posts %}", &posts);
         if let Some(ref license) = cfg.license {
-            content.push_str(&format!(
-                "\n\nAll content for this site is release under the {} license.\n",
-                license,
-            ));
+            writeln!(
+                content,
+                "\n\nAll content for this site is release under the {license} license.",
+            )?;
         }
-        content.push_str(&format!(
-            "© {} by {}\n",
+        writeln!(
+            content,
+            "© {} by {}",
             Utc::now().date().year(),
             &cfg.author.name
-        ));
+        )?;
         if cfg.show_email {
             if let Some(ref email) = cfg.author.email {
-                content.push_str(&format!("=> mailto:{} Contact\n", email,));
+                writeln!(content, "=> mailto:{email} Contact")?;
             }
         }
         let path = Index::get_path(&PathBuf::from(output), None);
@@ -408,35 +413,37 @@ impl Capsule {
             } else {
                 Cow::from(&post.link.url)
             };
-            content.push_str(&format!("=> {} {}\n", url, post.link.display,));
+            writeln!(content, "=> {url} {}", post.link.display)?;
         }
         match &cfg.feed {
             Some(crate::config::Feed::Atom) => {
-                content.push_str("\n=> atom.xml Atom Feed\n");
+                writeln!(content, "\n=> atom.xml Atom Feed")?;
             }
             Some(crate::config::Feed::Gemini) => {
-                content.push_str("\n=> feed.gmi Gemini Feed\n");
+                writeln!(content, "\n=> feed.gmi Gemini Feed")?;
             }
             Some(crate::config::Feed::Both) => {
-                content.push_str("\n=> atom.xml Atom Feed\n=> feed.gmi Gemini Feed\n");
+                writeln!(content, "\n=> atom.xml Atom Feed\n=> feed.gmi Gemini Feed")?;
             }
             None => {}
         }
-        content.push_str("\n=> ../tags tags\n=> .. Home\n");
+        writeln!(content, "\n=> ../tags tags\n=> .. Home")?;
         if let Some(ref license) = cfg.license {
-            content.push_str(&format!(
-                "All content for this site is release under the {} license.\n",
+            writeln!(
+                content,
+                "All content for this site is release under the {} license.",
                 license,
-            ));
+            )?;
         }
-        content.push_str(&format!(
-            "© {} by {}\n",
+        writeln!(
+            content,
+            "© {} by {}",
             Utc::now().date().year(),
             &cfg.author.name
-        ));
+        )?;
         if cfg.show_email {
             if let Some(ref email) = cfg.author.email {
-                content.push_str(&format!("=> mailto:{} Contact\n", email,));
+                writeln!(content, "=> mailto:{email} Contact")?;
             }
         }
         let path = Index::get_path(&PathBuf::from(output), Some(&PathBuf::from("gemlog")));

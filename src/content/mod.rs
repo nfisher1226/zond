@@ -15,6 +15,7 @@ use {
     std::{
         borrow::Cow,
         error::Error,
+        fmt::Write,
         fs,
         path::{Path, PathBuf},
     },
@@ -242,47 +243,51 @@ impl Page {
             ),
         };
         if !self.meta.tags.is_empty() {
-            page.push_str("### Tags for this page\n");
+            writeln!(page, "### Tags for this page")?;
+            let u = cfg.url()?;
             for tag in &self.meta.tags {
-                page.push_str(&match depth {
-                    1 => format!("=> tags/{tag}.gmi {tag}\n"),
-                    2 => format!("=> ../tags/{tag}.gmi {tag}\n"),
-                    3 => format!("=> ../../tags/{tag}.gmi {tag}\n"),
-                    _ => format!("=> {}/tags/{tag}.gmi {tag}\n", cfg.url()?),
-                });
+                match depth {
+                    1 => writeln!(page, "=> tags/{tag}.gmi {tag}")?,
+                    2 => writeln!(page, "=> ../tags/{tag}.gmi {tag}")?,
+                    3 => writeln!(page, "=> ../../tags/{tag}.gmi {tag}")?,
+                    _ => writeln!(page, "=> {u}/tags/{tag}.gmi {tag}")?,
+                }
             }
             page.push('\n');
         }
-        page.push_str(&format!(
-            "=> {} Home\n",
+        writeln!(
+            page,
+            "=> {} Home",
             match depth {
                 1 => Cow::from("."),
                 2 => Cow::from(".."),
                 _ => Cow::from(cfg.url()?.to_string()),
             }
-        ));
+        )?;
         if let Some(p) = path.parent() {
             if let Some(n) = p.file_name() {
                 if let Some(s) = n.to_str() {
                     if s == "gemlog" {
-                        page.push_str("=> . All posts\n");
+                        writeln!(page, "=> . All posts")?;
                     }
                 }
             }
         }
         if let Some(license) = &cfg.license {
-            page.push_str(&format!(
-                "All content for this site is released under the {license} license.\n"
-            ));
+            writeln!(
+                page,
+                "All content for this site is released under the {license} license."
+            )?;
         }
-        page.push_str(&format!(
-            "© {} by {}\n",
+        writeln!(
+            page,
+            "© {} by {}",
             self.meta.published.as_ref().unwrap().year(),
             cfg.author.name,
-        ));
+        )?;
         if cfg.show_email {
             if let Some(ref email) = cfg.author.email {
-                page.push_str(&format!("=> mailto:{email} Contact\n"));
+                writeln!(page, "=> mailto:{email} Contact")?;
             }
         }
         if let Some(p) = path.parent() {
