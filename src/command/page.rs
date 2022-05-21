@@ -11,7 +11,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     match matches.subcommand() {
         Some(("init", init_matches)) => {
             let tags = match init_matches.values_of("tags") {
-                Some(t) => t.map(|tag| tag.to_string()).collect::<Vec<_>>(),
+                Some(t) => t.map(std::string::ToString::to_string).collect::<Vec<_>>(),
                 None => Vec::new(),
             };
             content::Page::create(

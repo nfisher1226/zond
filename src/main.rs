@@ -1,3 +1,4 @@
+#![warn(clippy::all, clippy::pedantic)]
 #![doc = include_str!("../README.md")]
 /// Adds an ascii banner to each page (if the file banner.txt exists)
 pub(crate) mod banner;

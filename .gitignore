@@ -3,3 +3,5 @@
 /public
 Config.ron
 tags
+tags.temp
+tags.lock

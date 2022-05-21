@@ -36,7 +36,9 @@ pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     if let Some(domain) = matches.value_of("domain") {
         cfg.domain = domain.to_string();
     }
-    cfg.path = matches.value_of("path").map(|x| x.to_string());
+    cfg.path = matches
+        .value_of("path")
+        .map(std::string::ToString::to_string);
     if let Some(e) = matches.value_of("entries") {
         cfg.entries = match e.parse() {
             Ok(n) => n,
