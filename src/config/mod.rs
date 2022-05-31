@@ -117,7 +117,7 @@ impl Config {
     }
 
     /// Returns the address for the root of this capsule
-    pub fn url(&self) -> Result<Url, Box<dyn Error>> {
+    pub fn url(&self) -> Result<Url, url::ParseError> {
         let mut path = PathBuf::new();
         if let Some(p) = &self.path {
             path.push(p);
