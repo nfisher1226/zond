@@ -5,7 +5,12 @@ use {
     atom_syndication as atom,
     ron::ser::{to_string_pretty, PrettyConfig},
     serde::{Deserialize, Serialize},
-    std::{error::Error, fs, path::PathBuf},
+    std::{
+        error::Error,
+        fmt::{self, Display},
+        fs,
+        path::PathBuf
+    },
     url::Url,
 };
 
@@ -68,9 +73,53 @@ pub struct Config {
     pub show_email: bool,
 }
 
+#[derive(Debug)]
+pub enum ConfigError {
+    IoError(std::io::Error),
+    RonError(ron::Error),
+}
+
+impl Display for ConfigError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::IoError(e) => write!(f, "{}", e),
+            Self::RonError(e) => {
+                write!(
+                    f,
+                    "code: {}\nposition:\n  line: {}\n  column: {}",
+                    e.code,
+                    e.position.line,
+                    e.position.col,
+                )
+            }
+        }
+    }
+}
+
+impl Error for ConfigError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::IoError(e) => Some(e),
+            Self::RonError(e) => Some(e),
+        }
+    }
+}
+
+impl From<std::io::Error> for ConfigError {
+    fn from(err: std::io::Error) -> Self {
+        Self::IoError(err)
+    }
+}
+
+impl From<ron::Error> for ConfigError {
+    fn from(err: ron::Error) -> Self {
+        Self::RonError(err)
+    }
+}
+
 impl Config {
     /// Load the config from disk
-    pub fn load() -> Result<Self, Box<dyn Error>> {
+    pub fn load() -> Result<Self, ConfigError> {
         let cfg_file = PathBuf::from("Config.ron");
         let cfg_file = match fs::read_to_string(cfg_file) {
             Ok(s) => s,
@@ -94,7 +143,7 @@ impl Config {
     }
 
     /// Save the config to disk
-    pub fn save(&self) -> Result<(), Box<dyn Error>> {
+    pub fn save(&self) -> Result<(), ConfigError> {
         let ron_str = match to_string_pretty(&self, PrettyConfig::new()) {
             Ok(s) => s,
             Err(e) => {
