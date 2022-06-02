@@ -5,6 +5,9 @@ use {
 };
 
 /// Matches the `page` subcommand cli arguments and runs the appropriate code
+///
+/// # Errors
+/// Errors are bubbled up from the called functions
 pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let title = matches.value_of("title").unwrap_or("");
     let path = matches.value_of("path").map(PathBuf::from);

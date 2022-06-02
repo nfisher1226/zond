@@ -31,6 +31,10 @@ pub(crate) mod link;
 pub trait ToDisk {
     type Err;
 
+    /// Saves the type to disk
+    ///
+    /// # Errors
+    /// Returns error if unable to write to disk
     fn to_disk(&self, path: &Path) -> Result<(), Self::Err>;
 }
 
@@ -88,6 +92,10 @@ impl GetPath for Feed {
     }
 }
 
+/// Writes the footer for each page
+///
+/// # Errors
+/// Returns `fmt::Error` if formatting fails
 pub fn footer(page: &mut String, year: i32, cfg: &Config) -> Result<(), fmt::Error> {
     if let Some(license) = &cfg.license {
         writeln!(

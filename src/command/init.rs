@@ -10,6 +10,9 @@ use {
 };
 
 /// Creates and saves `Config.ron` to disk
+///
+/// # Errors
+/// Errors are bubbled up from the called functions
 pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let cfg_file = PathBuf::from("Config.ron");
     let mut cfg = Config::default();

@@ -10,6 +10,9 @@ pub mod post;
 use {clap::ArgMatches, std::error::Error};
 
 /// Parses the cli and runs the appropriate subcommand
+///
+/// # Errors
+/// Errors are bubbled up from the called functions
 pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     match matches.subcommand() {
         Some(("init", init_matches)) => init::run(init_matches)?,

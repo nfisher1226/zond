@@ -77,6 +77,7 @@ pub struct Config {
 }
 
 #[derive(Debug)]
+#[allow(clippy::module_name_repetitions)]
 pub enum ConfigError {
     IoError(std::io::Error),
     RonError(ron::Error),

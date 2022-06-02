@@ -1,5 +1,6 @@
 use clap::{Arg, ArgGroup, Command};
 
+#[must_use]
 pub fn init() -> Command<'static> {
     Command::new("init")
         .about("Initialize a new capsule")
@@ -84,6 +85,7 @@ pub fn init() -> Command<'static> {
         )
 }
 
+#[must_use]
 pub fn build() -> Command<'static> {
     Command::new("build").about("Build the capsule").arg(
         Arg::new("output")
@@ -95,6 +97,7 @@ pub fn build() -> Command<'static> {
     )
 }
 
+#[must_use]
 pub fn post_init() -> Command<'static> {
     Command::new("init")
         .about("Initializes a new post")
@@ -127,6 +130,7 @@ pub fn post_init() -> Command<'static> {
         )
 }
 
+#[must_use]
 pub fn post() -> Command<'static> {
     Command::new("post")
         .about("Manage gemlog posts")
@@ -149,6 +153,7 @@ that tag.",
         .subcommand(Command::new("edit").about("Opens the post in an editor"))
 }
 
+#[must_use]
 pub fn page_init() -> Command<'static> {
     Command::new("init")
         .about("Initializes a new page")
@@ -181,6 +186,7 @@ pub fn page_init() -> Command<'static> {
         )
 }
 
+#[must_use]
 pub fn page() -> Command<'static> {
     Command::new("page")
         .about("Manage pages")
@@ -220,6 +226,7 @@ section.",
         .subcommand(Command::new("edit").about("Opens the page in an editor"))
 }
 
+#[must_use]
 /// Generates the command line options
 pub fn zond() -> Command<'static> {
     Command::new("zond")

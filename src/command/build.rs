@@ -53,6 +53,9 @@ impl GetPath for GemFeed {
 }
 
 /// Performs the build
+///
+/// # Errors
+/// Errors are bubbled up from the called functions
 pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let cfg = Config::load()?;
     let mut output = PathBuf::from(matches.value_of("output").unwrap_or("public"));
@@ -280,7 +283,7 @@ impl Capsule {
         }
         index_page.push_str("\n=> .. Home\n");
         let year = Utc::now().date().year();
-        crate::footer(&mut &mut index_page, year, cfg)?;
+        crate::footer(&mut index_page, year, cfg)?;
         Index(index_page).to_disk(&index_path)?;
         Ok(())
     }
