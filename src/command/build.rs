@@ -2,7 +2,8 @@ use {
     crate::{
         config::Config,
         content::{index::Index, Kind, Meta, Page, Time},
-        traits::{GetPath, ToDisk},
+        link::Link,
+        GetPath, ToDisk,
     },
     atom_syndication as atom,
     atom_syndication::Feed,
@@ -28,31 +29,6 @@ struct Post {
 type Posts = BTreeMap<i64, Post>;
 /// A `HashMap` of tag names and their associated links
 type Tags = HashMap<String, Vec<Link>>;
-
-#[derive(Clone, Debug, Default)]
-/// Represents both a url and the text to be displayed
-pub struct Link {
-    pub url: String,
-    pub display: String,
-}
-
-impl Link {
-    pub fn get(origin: &Path, cfg: &Config, meta: &Meta) -> Result<Self, Box<dyn Error>> {
-        let mut url = cfg.url()?;
-        let mut current = std::env::current_dir()?;
-        current.push("content");
-        let path = origin.strip_prefix(current)?;
-        url.set_path(&path.to_string_lossy());
-        Ok(Self {
-            url: url.to_string(),
-            display: format!(
-                "{} - {}",
-                meta.published.as_ref().unwrap().date_string(),
-                &meta.title,
-            ),
-        })
-    }
-}
 
 #[derive(Clone)]
 /// Wrapper type around the text of a gemini feed
@@ -298,43 +274,13 @@ impl Capsule {
                 writeln!(page, "=> {url} {}", link.display)?;
             }
             page.push_str("\n=> . All tags\n=> .. Home\n");
-            if let Some(ref license) = cfg.license {
-                writeln!(
-                    page,
-                    "All content for this site is release under the {license} license."
-                )?;
-            }
-            writeln!(
-                page,
-                "© {} by {}",
-                Utc::now().date().year(),
-                &cfg.author.name
-            )?;
-            if cfg.show_email {
-                if let Some(ref email) = cfg.author.email {
-                    writeln!(page, "=> mailto:{email} Contact")?;
-                }
-            }
+            let year = Utc::now().date().year();
+            crate::footer(&mut page, year, cfg)?;
             std::fs::write(&dest, &page.as_bytes())?;
         }
         index_page.push_str("\n=> .. Home\n");
-        if let Some(ref license) = cfg.license {
-            writeln!(
-                index_page,
-                "All content for this site is release under the {license} license."
-            )?;
-        }
-        writeln!(
-            index_page,
-            "© {} by {}",
-            Utc::now().date().year(),
-            &cfg.author.name
-        )?;
-        if cfg.show_email {
-            if let Some(ref email) = cfg.author.email {
-                writeln!(index_page, "=> mailto:{email} Contact")?;
-            }
-        }
+        let year = Utc::now().date().year();
+        crate::footer(&mut &mut index_page, year, cfg)?;
         Index(index_page).to_disk(&index_path)?;
         Ok(())
     }
@@ -366,25 +312,10 @@ impl Capsule {
             };
             writeln!(posts, "=> {url} {}", post.link.display)?;
         }
-        posts.push_str("=> gemlog/ All posts");
+        posts.push_str("=> gemlog/ All posts\n");
         let mut content = content.replace("{% posts %}", &posts);
-        if let Some(ref license) = cfg.license {
-            writeln!(
-                content,
-                "\n\nAll content for this site is release under the {license} license.",
-            )?;
-        }
-        writeln!(
-            content,
-            "© {} by {}",
-            Utc::now().date().year(),
-            &cfg.author.name
-        )?;
-        if cfg.show_email {
-            if let Some(ref email) = cfg.author.email {
-                writeln!(content, "=> mailto:{email} Contact")?;
-            }
-        }
+        let year = Utc::now().date().year();
+        crate::footer(&mut content, year, cfg)?;
         let path = Index::get_path(&PathBuf::from(output), None);
         Index(content).to_disk(&path)?;
         Ok(())
@@ -428,24 +359,8 @@ impl Capsule {
             None => {}
         }
         writeln!(content, "\n=> ../tags tags\n=> .. Home")?;
-        if let Some(ref license) = cfg.license {
-            writeln!(
-                content,
-                "All content for this site is release under the {} license.",
-                license,
-            )?;
-        }
-        writeln!(
-            content,
-            "© {} by {}",
-            Utc::now().date().year(),
-            &cfg.author.name
-        )?;
-        if cfg.show_email {
-            if let Some(ref email) = cfg.author.email {
-                writeln!(content, "=> mailto:{email} Contact")?;
-            }
-        }
+        let year = Utc::now().date().year();
+        crate::footer(&mut content, year, cfg)?;
         let path = Index::get_path(&PathBuf::from(output), Some(&PathBuf::from("gemlog")));
         Index(content).to_disk(&path)?;
         Ok(())

@@ -2,7 +2,7 @@ use {
     crate::{
         config::{Config, Feed},
         content::{Meta, Page},
-        traits::ToDisk,
+        ToDisk,
     },
     clap::ArgMatches,
     std::{error::Error, path::PathBuf},

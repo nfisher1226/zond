@@ -7,7 +7,7 @@ mod time;
 
 pub use time::Time;
 use {
-    crate::{config::Config, traits::ToDisk},
+    crate::{config::Config, ToDisk},
     atom_syndication as atom,
     extract_frontmatter::Extractor,
     ron::ser::{to_string_pretty, PrettyConfig},
@@ -273,23 +273,8 @@ impl Page {
                 }
             }
         }
-        if let Some(license) = &cfg.license {
-            writeln!(
-                page,
-                "All content for this site is released under the {license} license."
-            )?;
-        }
-        writeln!(
-            page,
-            "© {} by {}",
-            self.meta.published.as_ref().unwrap().year(),
-            cfg.author.name,
-        )?;
-        if cfg.show_email {
-            if let Some(ref email) = cfg.author.email {
-                writeln!(page, "=> mailto:{email} Contact")?;
-            }
-        }
+        let year = self.meta.published.as_ref().unwrap().year();
+        crate::footer(&mut page, year, cfg)?;
         if let Some(p) = path.parent() {
             if !p.exists() {
                 fs::create_dir_all(p)?;

@@ -2,6 +2,7 @@
 mod license;
 pub use license::License;
 use {
+    crate::link::Link,
     atom_syndication as atom,
     ron::ser::{to_string_pretty, PrettyConfig},
     serde::{Deserialize, Serialize},
@@ -9,7 +10,7 @@ use {
         error::Error,
         fmt::{self, Display},
         fs,
-        path::PathBuf
+        path::PathBuf,
     },
     url::Url,
 };
@@ -71,6 +72,8 @@ pub struct Config {
     pub license: Option<License>,
     /// Whether to provide a `mailto:` link to the author's email
     pub show_email: bool,
+    /// A collection of links to display at the bottom of each page
+    pub footer_links: Vec<Link>,
 }
 
 #[derive(Debug)]
@@ -87,9 +90,7 @@ impl Display for ConfigError {
                 write!(
                     f,
                     "code: {}\nposition:\n  line: {}\n  column: {}",
-                    e.code,
-                    e.position.line,
-                    e.position.col,
+                    e.code, e.position.line, e.position.col,
                 )
             }
         }
@@ -175,7 +176,7 @@ impl Config {
             Ok(u) => u,
             Err(e) => {
                 eprintln!("Error parsing url from config data");
-                return Err(e.into());
+                return Err(e);
             }
         };
         url.set_path(&format!("{}", path.display()));

@@ -1,5 +1,5 @@
 use {
-    crate::traits::{GetPath, ToDisk},
+    crate::{GetPath, ToDisk},
     std::{
         io::Error,
         path::{Path, PathBuf},

@@ -1,13 +1,31 @@
+#![warn(clippy::all, clippy::pedantic)]
+#![doc = include_str!("../README.md")]
+
 use {
     atom_syndication::Feed,
+    config::Config,
     std::{
         error::Error,
+        fmt::{self, Write as _},
         fs::File,
         io::{BufReader, Write},
         path::{Path, PathBuf},
     },
     xml::{EmitterConfig, EventReader},
 };
+
+/// Adds an ascii banner to each page (if the file banner.txt exists)
+pub(crate) mod banner;
+/// Generates the command line options struct
+pub mod cli;
+/// Parses out the subcommands from the cli
+pub mod command;
+/// Holds the capsule level configuration
+pub(crate) mod config;
+/// Working with pages and gemlog posts
+pub(crate) mod content;
+/// A Link
+pub(crate) mod link;
 
 /// Saves a content type to disk
 pub trait ToDisk {
@@ -68,4 +86,23 @@ impl GetPath for Feed {
         path.push("atom.xml");
         path
     }
+}
+
+pub fn footer(page: &mut String, year: i32, cfg: &Config) -> Result<(), fmt::Error> {
+    if let Some(license) = &cfg.license {
+        writeln!(
+            page,
+            "All content for this site is released under the {license} license."
+        )?;
+    }
+    writeln!(page, "© {} by {}", year, cfg.author.name,)?;
+    for link in &cfg.footer_links {
+        writeln!(page, "{link}")?;
+    }
+    if cfg.show_email {
+        if let Some(ref email) = cfg.author.email {
+            writeln!(page, "=> mailto:{email} Contact")?;
+        }
+    }
+    Ok(())
 }
