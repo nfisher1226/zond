@@ -15,6 +15,7 @@ file. Here's an example.
     feed: Some(Both),
     license: Some(CcBySa),
     show_email: true,
+    footer_links: [(url: "spartan://black.sabbath.fm", display: "Spartan")],
 )
 ```
 ### What the fields affect
@@ -48,6 +49,7 @@ file. Here's an example.
   * None - no license specified
 * show_email - whether or not to include a link to the author's email on each
   page. Requires an email to be set in the `author: email` field.
+* footer_links - an array of links to display at the bottom of every page.
 
 ### Using a custom ascii art banner
 Any text placed in the file "content.txt" will be included in a preformatted block

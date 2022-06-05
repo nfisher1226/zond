@@ -44,6 +44,7 @@ USAGE:
     feed: Some(Both),
     license: Some(CcBySa),
     show_email: true,
+    footer_links: [(url: "spartan://black.sabbath.fm", display: "Spartan site")],
 )
 ```
 Next: [Working with pages](page.md)
