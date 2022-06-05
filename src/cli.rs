@@ -1,6 +1,7 @@
 use clap::{Arg, ArgGroup, Command};
 
 #[must_use]
+/// The init subcommand
 pub fn init() -> Command<'static> {
     Command::new("init")
         .about("Initialize a new capsule")
@@ -86,6 +87,7 @@ pub fn init() -> Command<'static> {
 }
 
 #[must_use]
+/// The build subcommand
 pub fn build() -> Command<'static> {
     Command::new("build").about("Build the capsule").arg(
         Arg::new("output")
@@ -98,6 +100,7 @@ pub fn build() -> Command<'static> {
 }
 
 #[must_use]
+/// The post init subcommand
 pub fn post_init() -> Command<'static> {
     Command::new("init")
         .about("Initializes a new post")
@@ -131,6 +134,7 @@ pub fn post_init() -> Command<'static> {
 }
 
 #[must_use]
+/// the post subcommand
 pub fn post() -> Command<'static> {
     Command::new("post")
         .about("Manage gemlog posts")
@@ -154,6 +158,7 @@ that tag.",
 }
 
 #[must_use]
+/// The page init subcommand
 pub fn page_init() -> Command<'static> {
     Command::new("init")
         .about("Initializes a new page")
@@ -187,6 +192,7 @@ pub fn page_init() -> Command<'static> {
 }
 
 #[must_use]
+/// The page subcommand
 pub fn page() -> Command<'static> {
     Command::new("page")
         .about("Manage pages")

@@ -1,16 +1,27 @@
 use std::{error, fmt, io, num, path, str};
 
 #[derive(Debug)]
+/// Zond errors
 pub enum Error {
+    /// An error opening the page in your editor
     EditorError(String),
+    /// An error reading or writing from disk
     IoError(io::Error),
+    /// An error while formatting data
     FormatError,
+    /// An error with an incorrect path prefix
     PathPrefixError,
+    /// An error parsing a boolean from the command line
     ParseBoolError,
+    /// An error parsing an integer from the command line
     ParseIntError,
+    /// An error reading or writing the configuration file
     RonError(ron::Error),
+    /// An error parsing the time of publication
     TimeError(chrono::ParseError),
+    /// An error parsing a url
     UrlError(url::ParseError),
+    /// Another, unexpected, error
     OtherError(String),
 }
 
