@@ -7,13 +7,12 @@ pub mod page;
 /// Gemlog post operations
 pub mod post;
 
-use {clap::ArgMatches, std::error::Error};
+use clap::ArgMatches;
 
 /// Parses the cli and runs the appropriate subcommand
-///
 /// # Errors
 /// Errors are bubbled up from the called functions
-pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
+pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     match matches.subcommand() {
         Some(("init", init_matches)) => init::run(init_matches)?,
         Some(("page", page_matches)) => page::run(page_matches)?,

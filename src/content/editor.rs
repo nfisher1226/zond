@@ -1,7 +1,7 @@
-use std::{env, error::Error, process::Command};
+use std::{env, process::Command};
 
 /// Open the given uri in an appropriate program
-pub fn edit(file: &str) -> Result<(), Box<dyn Error>> {
+pub fn edit(file: &str) -> Result<(), crate::Error> {
     if let Ok(ed) = env::var("EDITOR") {
         run(&ed, file)
     } else {
@@ -14,7 +14,10 @@ pub fn edit(file: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn run(handler: &str, arg: &str) -> Result<(), Box<dyn Error>> {
-    Command::new(handler).arg(arg).status()?;
-    Ok(())
+fn run(handler: &str, arg: &str) -> Result<(), crate::Error> {
+    if let Err(e) = Command::new(handler).arg(arg).status() {
+        Err(crate::Error::EditorError(format!("{}", e)))
+    } else {
+        Ok(())
+    }
 }

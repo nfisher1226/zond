@@ -1,8 +1,8 @@
 use {
     serde::{Deserialize, Serialize},
-    std::{convert::From, fmt::Display},
+    std::fmt,
 };
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 /// Represents one of several Creative Commons license types or a custom license
 pub enum License {
     /// Credit must be given to the creator\
@@ -40,8 +40,8 @@ pub enum License {
     ),
 }
 
-impl Display for License {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for License {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{}",

@@ -12,8 +12,8 @@ use {
     std::{
         borrow::Cow,
         collections::{BTreeMap, HashMap},
-        error::Error,
         fmt::Write,
+        fs,
         path::{Path, PathBuf},
     },
     url::Url,
@@ -35,10 +35,10 @@ type Tags = HashMap<String, Vec<Link>>;
 struct GemFeed(String);
 
 impl ToDisk for GemFeed {
-    type Err = Box<dyn Error>;
+    type Err = crate::Error;
 
     fn to_disk(&self, path: &Path) -> Result<(), Self::Err> {
-        std::fs::write(path, &self.0)?;
+        fs::write(path, &self.0)?;
         Ok(())
     }
 }
@@ -53,10 +53,9 @@ impl GetPath for GemFeed {
 }
 
 /// Performs the build
-///
 /// # Errors
 /// Errors are bubbled up from the called functions
-pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
+pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     let cfg = Config::load()?;
     let mut output = PathBuf::from(matches.value_of("output").unwrap_or("public"));
     if let Some(ref path) = cfg.path {
@@ -109,7 +108,7 @@ impl Capsule {
     /// Walks the "content" directory tree and extracts all of the information
     /// required to build the site. All pages and gemlog posts are also rendered
     /// in this function's main loop for efficiency.
-    fn init(cfg: &Config, output: &Path) -> Result<Self, Box<dyn Error>> {
+    fn init(cfg: &Config, output: &Path) -> Result<Self, crate::Error> {
         let mut posts: Posts = BTreeMap::new();
         let mut tags: Tags = HashMap::new();
         let mut current = std::env::current_dir()?;
@@ -189,7 +188,7 @@ impl Capsule {
     }
 
     /// Generates an Atom feed from the metadata
-    fn atom(&self, cfg: &Config) -> Result<Feed, Box<dyn Error>> {
+    fn atom(&self, cfg: &Config) -> Result<Feed, crate::Error> {
         let mut entries: Vec<atom::Entry> = vec![];
         for entry in self.posts.values().rev() {
             entries.push(entry.meta.atom(Kind::Post, cfg)?);
@@ -223,7 +222,7 @@ impl Capsule {
     }
 
     /// Generates a Gemini feed from the metadata
-    fn gemfeed(&self, cfg: &Config) -> Result<GemFeed, Box<dyn Error>> {
+    fn gemfeed(&self, cfg: &Config) -> Result<GemFeed, crate::Error> {
         let mut page = format!("# {}\n\n", &cfg.title);
         for entry in self.posts.values().rev() {
             let mut url = cfg.url()?;
@@ -243,7 +242,7 @@ impl Capsule {
     }
 
     /// Creates a gemtext page for each tag and an index page of all tags
-    fn render_tags(&self, cfg: &Config, output: &Path) -> Result<(), Box<dyn Error>> {
+    fn render_tags(&self, cfg: &Config, output: &Path) -> Result<(), crate::Error> {
         let index_path = Index::get_path(output, Some(&PathBuf::from("tags")));
         let base_url = cfg.url()?;
         let tags_url = base_url.join("tags/")?;
@@ -254,7 +253,7 @@ impl Capsule {
         let mut dest = PathBuf::from(output);
         dest.push("tags");
         if !dest.exists() {
-            std::fs::create_dir_all(&dest)?;
+            fs::create_dir_all(&dest)?;
         }
         for (tag, links) in &self.tags {
             writeln!(index_page, "=> {}.gmi {}", &tag, &tag)?;
@@ -279,7 +278,7 @@ impl Capsule {
             page.push_str("\n=> . All tags\n=> .. Home\n");
             let year = Utc::now().date().year();
             crate::footer(&mut page, year, cfg)?;
-            std::fs::write(&dest, &page.as_bytes())?;
+            fs::write(&dest, &page.as_bytes())?;
         }
         index_page.push_str("\n=> .. Home\n");
         let year = Utc::now().date().year();
@@ -289,7 +288,7 @@ impl Capsule {
     }
 
     /// Renders the capsule main index
-    fn render_index(&self, cfg: &Config, output: &Path) -> Result<(), Box<dyn Error>> {
+    fn render_index(&self, cfg: &Config, output: &Path) -> Result<(), crate::Error> {
         let origin: PathBuf = ["content", "index.gmi"].iter().collect();
         let page = if let Some(p) = Page::from_path(&origin) {
             p
@@ -325,7 +324,7 @@ impl Capsule {
     }
 
     /// Renders the gemlog index
-    fn render_gemlog_index(&self, cfg: &Config, output: &Path) -> Result<(), Box<dyn Error>> {
+    fn render_gemlog_index(&self, cfg: &Config, output: &Path) -> Result<(), crate::Error> {
         let origin: PathBuf = ["content", "gemlog", "index.gmi"].iter().collect();
         let page = if let Some(p) = Page::from_path(&origin) {
             p

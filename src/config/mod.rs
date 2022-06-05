@@ -6,16 +6,11 @@ use {
     atom_syndication as atom,
     ron::ser::{to_string_pretty, PrettyConfig},
     serde::{Deserialize, Serialize},
-    std::{
-        error::Error,
-        fmt::{self, Display},
-        fs,
-        path::PathBuf,
-    },
+    std::{fs, path::PathBuf},
     url::Url,
 };
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 /// The type of feed to generate
 pub enum Feed {
     /// Only an Atom feed will be generated
@@ -32,7 +27,7 @@ impl Default for Feed {
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 /// The primary author of the capsule
 pub struct Person {
     /// The author's name
@@ -53,7 +48,7 @@ impl Person {
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 /// Site wide capsule settings
 pub struct Config {
     /// Title of the entire capsule
@@ -76,52 +71,9 @@ pub struct Config {
     pub footer_links: Vec<Link>,
 }
 
-#[derive(Debug)]
-#[allow(clippy::module_name_repetitions)]
-pub enum ConfigError {
-    IoError(std::io::Error),
-    RonError(ron::Error),
-}
-
-impl Display for ConfigError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::IoError(e) => write!(f, "{}", e),
-            Self::RonError(e) => {
-                write!(
-                    f,
-                    "code: {}\nposition:\n  line: {}\n  column: {}",
-                    e.code, e.position.line, e.position.col,
-                )
-            }
-        }
-    }
-}
-
-impl Error for ConfigError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            Self::IoError(e) => Some(e),
-            Self::RonError(e) => Some(e),
-        }
-    }
-}
-
-impl From<std::io::Error> for ConfigError {
-    fn from(err: std::io::Error) -> Self {
-        Self::IoError(err)
-    }
-}
-
-impl From<ron::Error> for ConfigError {
-    fn from(err: ron::Error) -> Self {
-        Self::RonError(err)
-    }
-}
-
 impl Config {
     /// Load the config from disk
-    pub fn load() -> Result<Self, ConfigError> {
+    pub fn load() -> Result<Self, crate::Error> {
         let cfg_file = PathBuf::from("Config.ron");
         let cfg_file = match fs::read_to_string(cfg_file) {
             Ok(s) => s,
@@ -145,7 +97,7 @@ impl Config {
     }
 
     /// Save the config to disk
-    pub fn save(&self) -> Result<(), ConfigError> {
+    pub fn save(&self) -> Result<(), crate::Error> {
         let ron_str = match to_string_pretty(&self, PrettyConfig::new()) {
             Ok(s) => s,
             Err(e) => {
@@ -168,7 +120,7 @@ impl Config {
     }
 
     /// Returns the address for the root of this capsule
-    pub fn url(&self) -> Result<Url, url::ParseError> {
+    pub fn url(&self) -> Result<Url, crate::Error> {
         let mut path = PathBuf::new();
         if let Some(p) = &self.path {
             path.push(p);
@@ -177,7 +129,7 @@ impl Config {
             Ok(u) => u,
             Err(e) => {
                 eprintln!("Error parsing url from config data");
-                return Err(e);
+                return Err(e.into());
             }
         };
         url.set_path(&format!("{}", path.display()));

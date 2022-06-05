@@ -1,6 +1,4 @@
-use std::error::Error;
-
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<(), zond::Error> {
     let matches = zond::cli::zond().get_matches();
     zond::command::run(&matches)?;
     Ok(())

@@ -14,7 +14,6 @@ use {
     serde::{Deserialize, Serialize},
     std::{
         borrow::Cow,
-        error::Error,
         fmt::Write,
         fs,
         path::{Path, PathBuf},
@@ -56,7 +55,7 @@ impl Meta {
     }
 
     /// Returns a `Vec` of `atom_syndication::Categories` from the tags of this item
-    fn categories(&self, cfg: &Config) -> Result<Vec<atom::Category>, Box<dyn Error>> {
+    fn categories(&self, cfg: &Config) -> Result<Vec<atom::Category>, crate::Error> {
         let mut categories = Vec::new();
         for tag in &self.tags {
             let mut url = Url::parse(&format!("gemini://{}", cfg.domain))?;
@@ -91,7 +90,7 @@ impl Meta {
     }
 
     /// Generates an atom feed entry for this post
-    pub fn atom(&self, kind: Kind, config: &Config) -> Result<atom::Entry, Box<dyn Error>> {
+    pub fn atom(&self, kind: Kind, config: &Config) -> Result<atom::Entry, crate::Error> {
         let mut url: Url = format!("gemini://{}", config.domain).parse()?;
         let mut path = PathBuf::from(&config.path.as_ref().unwrap_or(&"/".to_string()));
         let rpath = Self::get_path(&self.title, kind);
@@ -132,7 +131,7 @@ pub struct Page {
 }
 
 impl ToDisk for Page {
-    type Err = Box<dyn Error>;
+    type Err = crate::Error;
 
     fn to_disk(&self, path: &Path) -> Result<(), Self::Err> {
         let mut contents = to_string_pretty(&self.meta, PrettyConfig::new())?;
@@ -168,7 +167,7 @@ impl Page {
         title: &str,
         summary: Option<&str>,
         tags: Vec<String>,
-    ) -> Result<PathBuf, Box<dyn Error>> {
+    ) -> Result<PathBuf, crate::Error> {
         let mut tpath = title.trim().to_lowercase().replace(' ', "_");
         tpath.push_str(".gmi");
         let file = match kind {
@@ -204,7 +203,7 @@ impl Page {
     }
 
     /// Publish a page given it's `Kind` and title
-    pub fn publish(kind: Kind, title: &str) -> Result<(), Box<dyn Error>> {
+    pub fn publish(kind: Kind, title: &str) -> Result<(), crate::Error> {
         let path = Meta::get_path(title, kind);
         if let Some(mut page) = Self::from_path(&path) {
             page.meta.publish();
@@ -214,7 +213,7 @@ impl Page {
     }
 
     /// Open a `Page` in your editor
-    pub fn edit(kind: Kind, title: &str) -> Result<(), Box<dyn Error>> {
+    pub fn edit(kind: Kind, title: &str) -> Result<(), crate::Error> {
         let path = Meta::get_path(title, kind);
         editor::edit(&format!("{}", path.display()))?;
         Ok(())
@@ -227,7 +226,7 @@ impl Page {
         path: &Path,
         depth: usize,
         banner: &Option<String>,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<(), crate::Error> {
         let mut page = match banner {
             Some(s) => format!(
                 "```\n{s}\n```\n# {}\n### {}\n{}\n\n",

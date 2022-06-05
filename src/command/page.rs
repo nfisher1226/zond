@@ -1,14 +1,10 @@
-use {
-    crate::content,
-    clap::ArgMatches,
-    std::{error::Error, path::PathBuf},
-};
+use {crate::content, clap::ArgMatches, std::path::PathBuf};
 
 /// Matches the `page` subcommand cli arguments and runs the appropriate code
 ///
 /// # Errors
 /// Errors are bubbled up from the called functions
-pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
+pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     let title = matches.value_of("title").unwrap_or("");
     let path = matches.value_of("path").map(PathBuf::from);
     match matches.subcommand() {

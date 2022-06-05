@@ -1,10 +1,9 @@
-use {crate::content, clap::ArgMatches, std::error::Error};
+use {crate::content, clap::ArgMatches};
 
 /// Matches the `post` subcommand cli arguments and runs the appropriate code
-///
 /// # Errors
 /// Errors are bubbled up from the called functions
-pub fn run(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
+pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     let title = match matches.value_of("title") {
         Some(t) => t,
         None => return Err(String::from("Missing title").into()),

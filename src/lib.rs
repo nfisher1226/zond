@@ -5,9 +5,8 @@ use {
     atom_syndication::Feed,
     config::Config,
     std::{
-        error::Error,
-        fmt::{self, Write as _},
-        fs::File,
+        fmt::Write as _,
+        fs::{self, File},
         io::{BufReader, Write},
         path::{Path, PathBuf},
     },
@@ -24,15 +23,18 @@ pub mod command;
 pub(crate) mod config;
 /// Working with pages and gemlog posts
 pub(crate) mod content;
+/// Zond errors
+pub mod error;
 /// A Link
 pub(crate) mod link;
+
+pub use error::Error;
 
 /// Saves a content type to disk
 pub trait ToDisk {
     type Err;
 
     /// Saves the type to disk
-    ///
     /// # Errors
     /// Returns error if unable to write to disk
     fn to_disk(&self, path: &Path) -> Result<(), Self::Err>;
@@ -44,12 +46,12 @@ pub trait GetPath {
 }
 
 impl ToDisk for Feed {
-    type Err = Box<dyn Error>;
+    type Err = Error;
 
     fn to_disk(&self, path: &Path) -> Result<(), Self::Err> {
         if let Some(p) = path.parent() {
             if !p.exists() {
-                if let Err(e) = std::fs::create_dir_all(&p) {
+                if let Err(e) = fs::create_dir_all(&p) {
                     eprintln!(
                         "Error creating directory in trait `ToDisk` for `atom_syndication::Feed`"
                     );
@@ -93,10 +95,9 @@ impl GetPath for Feed {
 }
 
 /// Writes the footer for each page
-///
 /// # Errors
 /// Returns `fmt::Error` if formatting fails
-pub fn footer(page: &mut String, year: i32, cfg: &Config) -> Result<(), fmt::Error> {
+pub fn footer(page: &mut String, year: i32, cfg: &Config) -> Result<(), crate::Error> {
     if let Some(license) = &cfg.license {
         writeln!(
             page,

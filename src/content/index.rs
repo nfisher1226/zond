@@ -1,7 +1,7 @@
 use {
     crate::{GetPath, ToDisk},
     std::{
-        io::Error,
+        fs,
         path::{Path, PathBuf},
     },
 };
@@ -24,14 +24,14 @@ impl GetPath for Index {
 }
 
 impl ToDisk for Index {
-    type Err = Error;
+    type Err = crate::Error;
 
     fn to_disk(&self, path: &Path) -> Result<(), Self::Err> {
-        match std::fs::write(path, &self.0) {
+        match fs::write(path, &self.0) {
             Ok(_) => Ok(()),
             Err(e) => {
                 eprintln!("Error writing index to disk");
-                Err(e)
+                Err(e.into())
             }
         }
     }

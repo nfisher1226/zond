@@ -4,7 +4,7 @@ use {
     std::fmt,
 };
 
-#[derive(Clone, Debug, Deserialize, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, PartialOrd, Serialize)]
 /// Conversion middleman because `chrono::DateTime` does not support serde
 pub struct Time {
     year: i32,
@@ -58,7 +58,7 @@ impl Time {
     }
 
     /// Returns the number of non-leap seconds since January 1, 1970 0:00:00 UTC (aka “UNIX timestamp”).
-    pub fn timestamp(&self) -> Result<i64, ParseError> {
+    pub fn timestamp(&self) -> Result<i64, crate::Error> {
         Ok(self.to_date_time()?.timestamp())
     }
 
