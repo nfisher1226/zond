@@ -302,6 +302,7 @@ impl Capsule {
             None => format!("# {}\n\n", &cfg.title),
         };
         content.push_str(&page.content);
+        content.push('\n');
         let mut posts = String::from("### Gemlog posts\n");
         let num = std::cmp::min(cfg.entries, self.posts.len());
         let base = cfg.url()?;

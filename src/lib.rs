@@ -98,6 +98,7 @@ impl GetPath for Feed {
 /// # Errors
 /// Returns `fmt::Error` if formatting fails
 pub fn footer(page: &mut String, year: i32, cfg: &Config) -> Result<(), crate::Error> {
+    page.push('\n');
     if let Some(license) = &cfg.license {
         writeln!(
             page,
