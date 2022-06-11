@@ -9,7 +9,7 @@ pub use time::Time;
 use {
     crate::{config::Config, ToDisk},
     atom_syndication as atom,
-    extract_frontmatter::Extractor,
+    extract_frontmatter::{config::Splitter, Extractor},
     ron::ser::{to_string_pretty, PrettyConfig},
     serde::{Deserialize, Serialize},
     std::{
@@ -147,10 +147,8 @@ impl Page {
     pub fn from_path(file: &Path) -> Option<Self> {
         match fs::read_to_string(file) {
             Ok(f) => {
-                let mut extractor = Extractor::new(&f);
-                extractor.select_by_terminator("---");
-                let (fm, doc): (Vec<&str>, &str) = extractor.split();
-                let fm = fm.join("\n");
+                let (fm, doc) = Extractor::new(Splitter::DelimiterLine("---")).extract(&f);
+                let fm = fm.trim().to_string();
                 let content = doc.trim().to_string();
                 match ron::de::from_str(&fm) {
                     Ok(meta) => Some(Self { meta, content }),

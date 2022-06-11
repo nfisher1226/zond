@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 atom_syndication = "0.11"
 clap = "3.1"
-extract-frontmatter = "2.1"
+extract-frontmatter = "4.1"
 ron = "0.7"
 serde = "1.0"
 url = "2.2"
