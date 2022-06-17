@@ -4,11 +4,13 @@
 use {
     atom_syndication::Feed,
     config::Config,
+    once_cell::sync::Lazy,
     std::{
         fmt::Write as _,
         fs::{self, File},
         io::{BufReader, Write},
         path::{Path, PathBuf},
+        process,
     },
     xml::{EmitterConfig, EventReader},
 };
@@ -32,6 +34,16 @@ pub(crate) mod post;
 
 pub use error::Error;
 
+static CONFIG: Lazy<Config> = Lazy::new(|| {
+    match Config::load() {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("Error loading config: {e}");
+            process::exit(1);
+        },
+    }
+});
+
 /// Saves a content type to disk
 pub trait ToDisk {
     type Err;
@@ -51,7 +63,7 @@ pub trait GetPath {
 pub trait AsAtom<T> {
     type Err;
 
-    fn as_atom(&self, _: &Config) -> Result<T, Self::Err>;
+    fn as_atom(&self) -> Result<T, Self::Err>;
 }
 
 impl ToDisk for Feed {
@@ -106,20 +118,20 @@ impl GetPath for Feed {
 /// Writes the footer for each page
 /// # Errors
 /// Returns `fmt::Error` if formatting fails
-pub fn footer(page: &mut String, year: i32, cfg: &Config) -> Result<(), crate::Error> {
+pub fn footer(page: &mut String, year: i32) -> Result<(), crate::Error> {
     page.push('\n');
-    if let Some(license) = &cfg.license {
+    if let Some(license) = &CONFIG.license {
         writeln!(
             page,
             "All content for this site is released under the {license} license."
         )?;
     }
-    writeln!(page, "© {} by {}", year, cfg.author.name,)?;
-    for link in &cfg.footer_links {
+    writeln!(page, "© {} by {}", year, CONFIG.author.name,)?;
+    for link in &CONFIG.footer_links {
         writeln!(page, "{link}")?;
     }
-    if cfg.show_email {
-        if let Some(ref email) = cfg.author.email {
+    if CONFIG.show_email {
+        if let Some(ref email) = CONFIG.author.email {
             writeln!(page, "=> mailto:{email} Contact")?;
         }
     }

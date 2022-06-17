@@ -1,6 +1,6 @@
 use {
     crate::{
-        config::Config,
+        CONFIG,
         content::{index::Index, Page, Time},
         link::Link,
         post::Post,
@@ -52,9 +52,8 @@ impl GetPath for GemFeed {
 /// # Errors
 /// Errors are bubbled up from the called functions
 pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
-    let cfg = Config::load()?;
     let mut output = PathBuf::from(matches.value_of("output").unwrap_or("public"));
-    if let Some(ref path) = cfg.path {
+    if let Some(ref path) = CONFIG.path {
         output.push(&path);
     }
     if !output.exists() {
@@ -64,31 +63,31 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     if output.exists() {
         std::fs::remove_dir_all(&output)?;
     }
-    let capsule = Capsule::init(&cfg, &output)?;
-    match &cfg.feed {
+    let capsule = Capsule::init(&output)?;
+    match CONFIG.feed {
         Some(crate::config::Feed::Atom) => {
-            let atom = capsule.as_atom(&cfg)?;
+            let atom = capsule.as_atom()?;
             let dest = Feed::get_path(&output, None);
             atom.to_disk(&dest)?;
         }
         Some(crate::config::Feed::Gemini) => {
-            let feed = capsule.gemfeed(&cfg)?;
+            let feed = capsule.gemfeed()?;
             let dest = GemFeed::get_path(&output, None);
             feed.to_disk(&dest)?;
         }
         Some(crate::config::Feed::Both) => {
-            let atom = capsule.as_atom(&cfg)?;
+            let atom = capsule.as_atom()?;
             let dest = Feed::get_path(&output, None);
             atom.to_disk(&dest)?;
-            let feed = capsule.gemfeed(&cfg)?;
+            let feed = capsule.gemfeed()?;
             let dest = GemFeed::get_path(&output, None);
             feed.to_disk(&dest)?;
         }
         None => {}
     }
-    capsule.render_tags(&cfg, &output)?;
-    capsule.render_index(&cfg, &output)?;
-    capsule.render_gemlog_index(&cfg, &output)?;
+    capsule.render_tags(&output)?;
+    capsule.render_index(&output)?;
+    capsule.render_gemlog_index(&output)?;
     Ok(())
 }
 
@@ -104,10 +103,10 @@ impl AsAtom<Feed> for Capsule {
     type Err = crate::Error;
 
     /// Generates an Atom feed from the metadata
-    fn as_atom(&self, cfg: &Config) -> Result<Feed, Self::Err> {
+    fn as_atom(&self) -> Result<Feed, Self::Err> {
         let mut entries: Vec<atom::Entry> = vec![];
         for entry in self.posts.values().rev() {
-            entries.push(entry.as_atom(cfg)?);
+            entries.push(entry.as_atom()?);
         }
         let year = if let Some(Some(date)) = self
             .posts
@@ -119,17 +118,17 @@ impl AsAtom<Feed> for Capsule {
         } else {
             Time::now().year()
         };
-        let mut url = cfg.url()?;
-        if let Some(p) = &cfg.path {
+        let mut url = CONFIG.url()?;
+        if let Some(p) = &CONFIG.path {
             url.set_path(p);
         }
         let feed = atom::FeedBuilder::default()
-            .title(cfg.title.to_string())
+            .title(CONFIG.title.to_string())
             .id(url.to_string())
-            .author(cfg.author.to_atom())
+            .author(CONFIG.author.to_atom())
             .rights(atom::Text::plain(format!(
                 "© {} by {}",
-                year, &cfg.author.name
+                year, &CONFIG.author.name
             )))
             .base(url.to_string())
             .entries(entries)
@@ -142,7 +141,7 @@ impl Capsule {
     /// Walks the "content" directory tree and extracts all of the information
     /// required to build the site. All pages and gemlog posts are also rendered
     /// in this function's main loop for efficiency.
-    fn init(cfg: &Config, output: &Path) -> Result<Self, crate::Error> {
+    fn init(output: &Path) -> Result<Self, crate::Error> {
         let mut posts: Posts = BTreeMap::new();
         let mut tags: Tags = HashMap::new();
         let mut current = std::env::current_dir()?;
@@ -186,7 +185,7 @@ impl Capsule {
                         if let Some(ref time) = page.meta.published {
                             if path != index && path != gemlog_index {
                                 let depth = entry.depth();
-                                let link = Link::get(&path, cfg, &page.meta)?;
+                                let link = Link::get(&path, &page.meta)?;
                                 for tag in &page.meta.tags {
                                     if let Some(t) = tags.get_mut(tag) {
                                         t.push(link.clone());
@@ -195,14 +194,14 @@ impl Capsule {
                                     }
                                 }
                                 if last.starts_with("gemlog") {
-                                    page.render(cfg, &output, depth, &banner)?;
+                                    page.render(&output, depth, &banner)?;
                                     let post = Post {
                                         link,
                                         meta: page.meta.clone(),
                                     };
                                     posts.insert(time.timestamp()?, post);
                                 } else {
-                                    page.render(cfg, &output, depth, &banner)?;
+                                    page.render(&output, depth, &banner)?;
                                 }
                             }
                         }
@@ -222,8 +221,8 @@ impl Capsule {
     }
 
     /// Generates a Gemini feed from the metadata
-    fn gemfeed(&self, cfg: &Config) -> Result<GemFeed, crate::Error> {
-        let mut page = format!("# {}\n\n", &cfg.title);
+    fn gemfeed(&self) -> Result<GemFeed, crate::Error> {
+        let mut page = format!("# {}\n\n", &CONFIG.title);
         for entry in self.posts.values().rev() {
             writeln!(page, "{}", entry.link,)?;
         }
@@ -231,13 +230,13 @@ impl Capsule {
     }
 
     /// Creates a gemtext page for each tag and an index page of all tags
-    fn render_tags(&self, cfg: &Config, output: &Path) -> Result<(), crate::Error> {
+    fn render_tags(&self, output: &Path) -> Result<(), crate::Error> {
         let index_path = Index::get_path(output, Some(&PathBuf::from("tags")));
-        let base_url = cfg.url()?;
+        let base_url = CONFIG.url()?;
         let tags_url = base_url.join("tags/")?;
         let mut index_page = match &self.banner {
-            Some(s) => format!("```\n{}\n```# {}\n\n### All tags\n", s, &cfg.title),
-            None => format!("# {}\n\n### All tags\n", &cfg.title),
+            Some(s) => format!("```\n{}\n```# {}\n\n### All tags\n", s, &CONFIG.title),
+            None => format!("# {}\n\n### All tags\n", &CONFIG.title),
         };
         let mut dest = PathBuf::from(output);
         dest.push("tags");
@@ -252,9 +251,9 @@ impl Capsule {
             let mut page = match &self.banner {
                 Some(s) => format!(
                     "```\n{s}\n```# {}\n\n### Pages tagged {}\n",
-                    &cfg.title, &tag
+                    &CONFIG.title, &tag
                 ),
-                None => format!("# {}\n\n### Pages tagged {}\n", &cfg.title, &tag),
+                None => format!("# {}\n\n### Pages tagged {}\n", &CONFIG.title, &tag),
             };
             for link in links {
                 let url = if let Some(u) = tags_url.make_relative(&Url::parse(&link.url)?) {
@@ -266,18 +265,18 @@ impl Capsule {
             }
             page.push_str("\n=> . All tags\n=> .. Home\n");
             let year = Utc::now().date().year();
-            crate::footer(&mut page, year, cfg)?;
+            crate::footer(&mut page, year)?;
             fs::write(&dest, &page.as_bytes())?;
         }
         index_page.push_str("\n=> .. Home\n");
         let year = Utc::now().date().year();
-        crate::footer(&mut index_page, year, cfg)?;
+        crate::footer(&mut index_page, year)?;
         Index(index_page).to_disk(&index_path)?;
         Ok(())
     }
 
     /// Renders the capsule main index
-    fn render_index(&self, cfg: &Config, output: &Path) -> Result<(), crate::Error> {
+    fn render_index(&self, output: &Path) -> Result<(), crate::Error> {
         let origin: PathBuf = ["content", "index.gmi"].iter().collect();
         let page = if let Some(p) = Page::from_path(&origin) {
             p
@@ -287,14 +286,14 @@ impl Capsule {
             idx
         };
         let mut content = match &self.banner {
-            Some(s) => format!("```\n{}\n```# {}\n\n", s, &cfg.title),
-            None => format!("# {}\n\n", &cfg.title),
+            Some(s) => format!("```\n{}\n```# {}\n\n", s, &CONFIG.title),
+            None => format!("# {}\n\n", &CONFIG.title),
         };
         content.push_str(&page.content);
         content.push('\n');
         let mut posts = String::from("### Gemlog posts\n");
-        let num = std::cmp::min(cfg.entries, self.posts.len());
-        let base = cfg.url()?;
+        let num = std::cmp::min(CONFIG.entries, self.posts.len());
+        let base = CONFIG.url()?;
         for post in self.posts.values().rev().take(num) {
             let url = Url::parse(&post.link.url)?;
             let url = if let Some(u) = base.make_relative(&url) {
@@ -307,14 +306,14 @@ impl Capsule {
         posts.push_str("=> gemlog/ All posts\n");
         let mut content = content.replace("{% posts %}", &posts);
         let year = Utc::now().date().year();
-        crate::footer(&mut content, year, cfg)?;
+        crate::footer(&mut content, year)?;
         let path = Index::get_path(&PathBuf::from(output), None);
         Index(content).to_disk(&path)?;
         Ok(())
     }
 
     /// Renders the gemlog index
-    fn render_gemlog_index(&self, cfg: &Config, output: &Path) -> Result<(), crate::Error> {
+    fn render_gemlog_index(&self, output: &Path) -> Result<(), crate::Error> {
         let origin: PathBuf = ["content", "gemlog", "index.gmi"].iter().collect();
         let page = if let Some(p) = Page::from_path(&origin) {
             p
@@ -322,12 +321,12 @@ impl Capsule {
             Page::default()
         };
         let mut content = match &self.banner {
-            Some(s) => format!("```\n{}\n```# {}\n\n", s, &cfg.title),
-            None => format!("# {}\n\n", &cfg.title),
+            Some(s) => format!("```\n{}\n```# {}\n\n", s, &CONFIG.title),
+            None => format!("# {}\n\n", &CONFIG.title),
         };
         content.push_str(&page.content);
         content.push_str("\n\n### Gemlog posts\n");
-        let base = cfg.url()?;
+        let base = CONFIG.url()?;
         let base = base.join("gemlog/index.gmi")?;
         for post in self.posts.values().rev() {
             let url = Url::parse(&post.link.url)?;
@@ -338,7 +337,7 @@ impl Capsule {
             };
             writeln!(content, "=> {url} {}", post.link.display)?;
         }
-        match &cfg.feed {
+        match &CONFIG.feed {
             Some(crate::config::Feed::Atom) => {
                 writeln!(content, "\n=> atom.xml Atom Feed")?;
             }
@@ -352,7 +351,7 @@ impl Capsule {
         }
         writeln!(content, "\n=> ../tags tags\n=> .. Home")?;
         let year = Utc::now().date().year();
-        crate::footer(&mut content, year, cfg)?;
+        crate::footer(&mut content, year)?;
         let path = Index::get_path(&PathBuf::from(output), Some(&PathBuf::from("gemlog")));
         Index(content).to_disk(&path)?;
         Ok(())

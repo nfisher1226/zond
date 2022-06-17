@@ -7,7 +7,7 @@ mod time;
 
 pub use time::Time;
 use {
-    crate::{config::Config, ToDisk},
+    crate::{CONFIG, ToDisk},
     atom_syndication as atom,
     extract_frontmatter::{config::Splitter, Extractor},
     ron::ser::{to_string_pretty, PrettyConfig},
@@ -55,11 +55,11 @@ impl Meta {
     }
 
     /// Returns a `Vec` of `atom_syndication::Categories` from the tags of this item
-    pub fn categories(&self, cfg: &Config) -> Result<Vec<atom::Category>, crate::Error> {
+    pub fn categories(&self) -> Result<Vec<atom::Category>, crate::Error> {
         let mut categories = Vec::new();
         for tag in &self.tags {
-            let mut url = Url::parse(&format!("gemini://{}", cfg.domain))?;
-            let mut path = match &cfg.path {
+            let mut url = Url::parse(&format!("gemini://{}", CONFIG.domain))?;
+            let mut path = match &CONFIG.path {
                 Some(p) => PathBuf::from(&p),
                 None => PathBuf::from("/"),
             };
@@ -189,7 +189,6 @@ impl Page {
     /// Render a page and save it to disk
     pub fn render(
         &self,
-        cfg: &Config,
         path: &Path,
         depth: usize,
         banner: &Option<String>,
@@ -210,7 +209,7 @@ impl Page {
         };
         if !self.meta.tags.is_empty() {
             writeln!(page, "### Tags for this page")?;
-            let u = cfg.url()?;
+            let u = CONFIG.url()?;
             for tag in &self.meta.tags {
                 match depth {
                     1 => writeln!(page, "=> tags/{tag}.gmi {tag}")?,
@@ -227,7 +226,7 @@ impl Page {
             match depth {
                 1 => Cow::from("."),
                 2 => Cow::from(".."),
-                _ => Cow::from(cfg.url()?.to_string()),
+                _ => Cow::from(CONFIG.url()?.to_string()),
             }
         )?;
         if let Some(p) = path.parent() {
@@ -240,7 +239,7 @@ impl Page {
             }
         }
         let year = self.meta.published.as_ref().unwrap().year();
-        crate::footer(&mut page, year, cfg)?;
+        crate::footer(&mut page, year)?;
         if let Some(p) = path.parent() {
             if !p.exists() {
                 fs::create_dir_all(p)?;

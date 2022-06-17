@@ -1,5 +1,5 @@
 use {
-    crate::{config::Config, content::Meta},
+    crate::{CONFIG, content::Meta},
     serde::{Deserialize, Serialize},
     std::{fmt, path::Path},
 };
@@ -18,8 +18,8 @@ impl fmt::Display for Link {
 }
 
 impl Link {
-    pub fn get(origin: &Path, cfg: &Config, meta: &Meta) -> Result<Self, crate::Error> {
-        let mut url = cfg.url()?;
+    pub fn get(origin: &Path, meta: &Meta) -> Result<Self, crate::Error> {
+        let mut url = CONFIG.url()?;
         let mut current = std::env::current_dir()?;
         current.push("content");
         let path = origin.strip_prefix(current)?;
