@@ -59,13 +59,6 @@ pub trait GetPath {
     fn get_path(root: &Path, subdir: Option<&Path>) -> PathBuf;
 }
 
-/// Attempts to generate an Atom type from this type
-pub trait AsAtom<T> {
-    type Err;
-
-    fn as_atom(&self) -> Result<T, Self::Err>;
-}
-
 impl ToDisk for Feed {
     type Err = Error;
 

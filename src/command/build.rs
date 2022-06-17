@@ -4,7 +4,7 @@ use {
         content::{index::Index, Page, Time},
         link::Link,
         post::Post,
-        AsAtom, GetPath, ToDisk,
+        GetPath, ToDisk,
     },
     atom_syndication as atom,
     atom::Feed,
@@ -48,6 +48,19 @@ impl GetPath for GemFeed {
     }
 }
 
+impl TryFrom<&Capsule> for GemFeed {
+    type Error = crate::Error;
+
+    /// Generates a Gemini feed from the metadata
+    fn try_from(capsule: &Capsule) -> Result<GemFeed, Self::Error> {
+        let mut page = format!("# {}\n\n", &CONFIG.title);
+        for entry in capsule.posts.values().rev() {
+            writeln!(page, "{}", entry.link,)?;
+        }
+        Ok(GemFeed(page))
+    }
+}
+
 /// Performs the build
 /// # Errors
 /// Errors are bubbled up from the called functions
@@ -66,20 +79,20 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     let capsule = Capsule::init(&output)?;
     match CONFIG.feed {
         Some(crate::config::Feed::Atom) => {
-            let atom = capsule.as_atom()?;
+            let atom = Feed::try_from(&capsule)?;
             let dest = Feed::get_path(&output, None);
             atom.to_disk(&dest)?;
         }
         Some(crate::config::Feed::Gemini) => {
-            let feed = capsule.gemfeed()?;
+            let feed = GemFeed::try_from(&capsule)?;
             let dest = GemFeed::get_path(&output, None);
             feed.to_disk(&dest)?;
         }
         Some(crate::config::Feed::Both) => {
-            let atom = capsule.as_atom()?;
+            let atom = Feed::try_from(&capsule)?;
             let dest = Feed::get_path(&output, None);
             atom.to_disk(&dest)?;
-            let feed = capsule.gemfeed()?;
+            let feed = GemFeed::try_from(&capsule)?;
             let dest = GemFeed::get_path(&output, None);
             feed.to_disk(&dest)?;
         }
@@ -99,16 +112,16 @@ struct Capsule {
     banner: Option<String>,
 }
 
-impl AsAtom<Feed> for Capsule {
-    type Err = crate::Error;
+impl TryFrom<&Capsule> for Feed {
+    type Error = crate::Error;
 
     /// Generates an Atom feed from the metadata
-    fn as_atom(&self) -> Result<Feed, Self::Err> {
+    fn try_from(capsule: &Capsule) -> Result<Feed, Self::Error> {
         let mut entries: Vec<atom::Entry> = vec![];
-        for entry in self.posts.values().rev() {
-            entries.push(entry.as_atom()?);
+        for entry in capsule.posts.values().rev() {
+            entries.push(entry.try_into()?);
         }
-        let year = if let Some(Some(date)) = self
+        let year = if let Some(Some(date)) = capsule
             .posts
             .values()
             .last()
@@ -218,15 +231,6 @@ impl Capsule {
             tags,
             banner,
         })
-    }
-
-    /// Generates a Gemini feed from the metadata
-    fn gemfeed(&self) -> Result<GemFeed, crate::Error> {
-        let mut page = format!("# {}\n\n", &CONFIG.title);
-        for entry in self.posts.values().rev() {
-            writeln!(page, "{}", entry.link,)?;
-        }
-        Ok(GemFeed(page))
     }
 
     /// Creates a gemtext page for each tag and an index page of all tags
