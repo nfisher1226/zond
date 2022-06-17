@@ -7,7 +7,7 @@ mod time;
 
 pub use time::Time;
 use {
-    crate::{CONFIG, ToDisk},
+    crate::{ToDisk, CONFIG},
     atom_syndication as atom,
     extract_frontmatter::{config::Splitter, Extractor},
     ron::ser::{to_string_pretty, PrettyConfig},
@@ -47,17 +47,14 @@ pub struct Meta {
     pub tags: Vec<String>,
 }
 
-impl Meta {
-    /// Marks this item as published with a publishing time corresponding the
-    /// current UTC time
-    fn publish(&mut self) {
-        self.published = Some(Time::now());
-    }
+pub type Categories = Vec<atom::Category>;
 
-    /// Returns a `Vec` of `atom_syndication::Categories` from the tags of this item
-    pub fn categories(&self) -> Result<Vec<atom::Category>, crate::Error> {
+impl TryFrom<&Meta> for Categories {
+    type Error = crate::Error;
+
+    fn try_from(meta: &Meta) -> Result<Self, Self::Error> {
         let mut categories = Vec::new();
-        for tag in &self.tags {
+        for tag in &meta.tags {
             let mut url = Url::parse(&format!("gemini://{}", CONFIG.domain))?;
             let mut path = match &CONFIG.path {
                 Some(p) => PathBuf::from(&p),
@@ -76,6 +73,14 @@ impl Meta {
             categories.push(cat);
         }
         Ok(categories)
+    }
+}
+
+impl Meta {
+    /// Marks this item as published with a publishing time corresponding the
+    /// current UTC time
+    fn publish(&mut self) {
+        self.published = Some(Time::now());
     }
 
     /// Given the title and `Kind` of this item, returns the path to the source file

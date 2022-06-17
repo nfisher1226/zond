@@ -1,6 +1,5 @@
 #![warn(clippy::all, clippy::pedantic)]
 #![doc = include_str!("../README.md")]
-
 use {
     atom_syndication::Feed,
     config::Config,
@@ -34,13 +33,11 @@ pub(crate) mod post;
 
 pub use error::Error;
 
-static CONFIG: Lazy<Config> = Lazy::new(|| {
-    match Config::load() {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("Error loading config: {e}");
-            process::exit(1);
-        },
+static CONFIG: Lazy<Config> = Lazy::new(|| match Config::load() {
+    Ok(c) => c,
+    Err(e) => {
+        eprintln!("Error loading config: {e}");
+        process::exit(1);
     }
 });
 

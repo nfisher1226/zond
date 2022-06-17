@@ -1,13 +1,11 @@
 use {
     crate::{
-        CONFIG,
         content::{index::Index, Page, Time},
         link::Link,
         post::Post,
-        GetPath, ToDisk,
+        GetPath, ToDisk, CONFIG,
     },
-    atom_syndication as atom,
-    atom::Feed,
+    atom_syndication::{self as atom, Feed},
     chrono::{Datelike, Utc},
     clap::ArgMatches,
     std::{

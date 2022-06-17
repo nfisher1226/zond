@@ -1,6 +1,6 @@
 use {
+    crate::{content::{Categories, Meta}, link::Link, CONFIG},
     atom_syndication as atom,
-    crate::{CONFIG, link::Link, content::Meta},
 };
 
 #[derive(Default)]
@@ -23,7 +23,7 @@ impl TryFrom<&Post> for atom::Entry {
             .id(&post.link.url)
             .updated(post.meta.published.as_ref().unwrap().to_date_time()?)
             .authors(vec![author])
-            .categories(post.meta.categories()?)
+            .categories(Categories::try_from(&post.meta)?)
             .link(link)
             .published(post.meta.published.as_ref().unwrap().to_date_time()?)
             .rights(atom::Text::plain(format!(
@@ -36,4 +36,3 @@ impl TryFrom<&Post> for atom::Entry {
         Ok(entry)
     }
 }
-
