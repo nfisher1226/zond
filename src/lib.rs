@@ -27,6 +27,8 @@ pub(crate) mod content;
 pub mod error;
 /// A Link
 pub(crate) mod link;
+/// A gemlog post
+pub(crate) mod post;
 
 pub use error::Error;
 
@@ -43,6 +45,13 @@ pub trait ToDisk {
 /// Gets the path of a content item
 pub trait GetPath {
     fn get_path(root: &Path, subdir: Option<&Path>) -> PathBuf;
+}
+
+/// Attempts to generate an Atom type from this type
+pub trait AsAtom<T> {
+    type Err;
+
+    fn as_atom(&self, _: &Config) -> Result<T, Self::Err>;
 }
 
 impl ToDisk for Feed {

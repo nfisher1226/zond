@@ -1,12 +1,13 @@
 use {
     crate::{
         config::Config,
-        content::{index::Index, Kind, Meta, Page, Time},
+        content::{index::Index, Page, Time},
         link::Link,
-        GetPath, ToDisk,
+        post::Post,
+        AsAtom, GetPath, ToDisk,
     },
     atom_syndication as atom,
-    atom_syndication::Feed,
+    atom::Feed,
     chrono::{Datelike, Utc},
     clap::ArgMatches,
     std::{
@@ -20,11 +21,6 @@ use {
     walkdir::WalkDir,
 };
 
-#[derive(Default)]
-struct Post {
-    meta: Meta,
-    link: Link,
-}
 /// A `BTreeMap` of gemlog posts
 type Posts = BTreeMap<i64, Post>;
 /// A `HashMap` of tag names and their associated links
@@ -71,7 +67,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     let capsule = Capsule::init(&cfg, &output)?;
     match &cfg.feed {
         Some(crate::config::Feed::Atom) => {
-            let atom = capsule.atom(&cfg)?;
+            let atom = capsule.as_atom(&cfg)?;
             let dest = Feed::get_path(&output, None);
             atom.to_disk(&dest)?;
         }
@@ -81,7 +77,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
             feed.to_disk(&dest)?;
         }
         Some(crate::config::Feed::Both) => {
-            let atom = capsule.atom(&cfg)?;
+            let atom = capsule.as_atom(&cfg)?;
             let dest = Feed::get_path(&output, None);
             atom.to_disk(&dest)?;
             let feed = capsule.gemfeed(&cfg)?;
@@ -102,6 +98,44 @@ struct Capsule {
     posts: Posts,
     tags: Tags,
     banner: Option<String>,
+}
+
+impl AsAtom<Feed> for Capsule {
+    type Err = crate::Error;
+
+    /// Generates an Atom feed from the metadata
+    fn as_atom(&self, cfg: &Config) -> Result<Feed, Self::Err> {
+        let mut entries: Vec<atom::Entry> = vec![];
+        for entry in self.posts.values().rev() {
+            entries.push(entry.as_atom(cfg)?);
+        }
+        let year = if let Some(Some(date)) = self
+            .posts
+            .values()
+            .last()
+            .map(|post| post.meta.published.as_ref())
+        {
+            date.year()
+        } else {
+            Time::now().year()
+        };
+        let mut url = cfg.url()?;
+        if let Some(p) = &cfg.path {
+            url.set_path(p);
+        }
+        let feed = atom::FeedBuilder::default()
+            .title(cfg.title.to_string())
+            .id(url.to_string())
+            .author(cfg.author.to_atom())
+            .rights(atom::Text::plain(format!(
+                "© {} by {}",
+                year, &cfg.author.name
+            )))
+            .base(url.to_string())
+            .entries(entries)
+            .build();
+        Ok(feed)
+    }
 }
 
 impl Capsule {
@@ -187,56 +221,11 @@ impl Capsule {
         })
     }
 
-    /// Generates an Atom feed from the metadata
-    fn atom(&self, cfg: &Config) -> Result<Feed, crate::Error> {
-        let mut entries: Vec<atom::Entry> = vec![];
-        for entry in self.posts.values().rev() {
-            entries.push(entry.meta.atom(Kind::Post, cfg)?);
-        }
-        let year = if let Some(Some(date)) = self
-            .posts
-            .values()
-            .last()
-            .map(|post| post.meta.published.as_ref())
-        {
-            date.year()
-        } else {
-            Time::now().year()
-        };
-        let mut url = cfg.url()?;
-        if let Some(p) = &cfg.path {
-            url.set_path(p);
-        }
-        let feed = atom::FeedBuilder::default()
-            .title(cfg.title.to_string())
-            .id(url.to_string())
-            .author(cfg.author.to_atom())
-            .rights(atom::Text::plain(format!(
-                "© {} by {}",
-                year, &cfg.author.name
-            )))
-            .base(url.to_string())
-            .entries(entries)
-            .build();
-        Ok(feed)
-    }
-
     /// Generates a Gemini feed from the metadata
     fn gemfeed(&self, cfg: &Config) -> Result<GemFeed, crate::Error> {
         let mut page = format!("# {}\n\n", &cfg.title);
         for entry in self.posts.values().rev() {
-            let mut url = cfg.url()?;
-            let mut path = PathBuf::from(&cfg.path.as_ref().unwrap_or(&"/".to_string()));
-            let rpath = Meta::get_path(&entry.meta.title, Kind::Post);
-            let rpath = rpath.strip_prefix("content")?;
-            path.push(&rpath);
-            url.set_path(&path.to_string_lossy());
-            writeln!(
-                page,
-                "=> {url} {} - {}",
-                entry.meta.published.as_ref().unwrap().date_string(),
-                &entry.meta.title,
-            )?;
+            writeln!(page, "{}", entry.link,)?;
         }
         Ok(GemFeed(page))
     }
