@@ -1,5 +1,9 @@
 use {
-    crate::{content::{Categories, Meta}, link::Link, CONFIG},
+    crate::{
+        content::{Categories, Meta},
+        link::Link,
+        CONFIG,
+    },
     atom_syndication as atom,
 };
 

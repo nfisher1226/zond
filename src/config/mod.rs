@@ -98,7 +98,8 @@ impl Config {
 
     /// Save the config to disk
     pub fn save(&self) -> Result<(), crate::Error> {
-        let ron_str = match to_string_pretty(&self, PrettyConfig::new()) {
+        let pcfg = PrettyConfig::new().struct_names(true).decimal_floats(true);
+        let ron_str = match to_string_pretty(&self, pcfg) {
             Ok(s) => s,
             Err(e) => {
                 eprintln!(

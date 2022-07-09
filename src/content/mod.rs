@@ -108,7 +108,8 @@ impl ToDisk for Page {
     type Err = crate::Error;
 
     fn to_disk(&self, path: &Path) -> Result<(), Self::Err> {
-        let mut contents = to_string_pretty(&self.meta, PrettyConfig::new())?;
+        let pcfg = PrettyConfig::new().struct_names(true).decimal_floats(true);
+        let mut contents = to_string_pretty(&self.meta, pcfg)?;
         contents.push_str("\n---\n");
         contents.push_str(&self.content);
         fs::write(path, contents)?;
