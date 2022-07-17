@@ -15,7 +15,8 @@ use {
     std::{
         borrow::Cow,
         fmt::Write,
-        fs,
+        fs::{self, File},
+        io::{BufWriter, Write as IoWrite},
         path::{Path, PathBuf},
     },
     url::Url,
@@ -108,11 +109,11 @@ impl ToDisk for Page {
     type Err = crate::Error;
 
     fn to_disk(&self, path: &Path) -> Result<(), Self::Err> {
+        let fd = File::create(path)?;
+        let mut writer = BufWriter::new(fd);
         let pcfg = PrettyConfig::new().struct_names(true).decimal_floats(true);
-        let mut contents = to_string_pretty(&self.meta, pcfg)?;
-        contents.push_str("\n---\n");
-        contents.push_str(&self.content);
-        fs::write(path, contents)?;
+        let header = to_string_pretty(&self.meta, pcfg)?;
+        writer.write_fmt(format_args!("{header}\n---\n{}", &self.content))?;
         Ok(())
     }
 }

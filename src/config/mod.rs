@@ -1,12 +1,13 @@
 /// Licensing for the content of the capsule
 mod license;
+
 pub use license::License;
 use {
     crate::link::Link,
     atom_syndication as atom,
-    ron::ser::{to_string_pretty, PrettyConfig},
+    ron::ser::{to_writer_pretty, PrettyConfig},
     serde::{Deserialize, Serialize},
-    std::{fs, path::PathBuf},
+    std::{fs::{self, File}, io::BufWriter, path::PathBuf},
     url::Url,
 };
 
@@ -99,25 +100,18 @@ impl Config {
     /// Save the config to disk
     pub fn save(&self) -> Result<(), crate::Error> {
         let pcfg = PrettyConfig::new().struct_names(true).decimal_floats(true);
-        let ron_str = match to_string_pretty(&self, pcfg) {
-            Ok(s) => s,
-            Err(e) => {
-                eprintln!(
-                    "Error encoding config:\n  code: {:?}\n  position:\n    line: {}\n    column: {}",
-                    e.code,
-                    e.position.line,
-                    e.position.col,
-                );
-                return Err(e.into());
-            }
-        };
-        match fs::write(&PathBuf::from("Config.ron"), ron_str) {
-            Ok(_) => Ok(()),
-            Err(e) => {
-                eprintln!("Error writing config file");
-                Err(e.into())
-            }
+        let buf = File::create("Config.ron")?;
+        let writer = BufWriter::new(buf);
+        if let Err(e) = to_writer_pretty(writer, &self, pcfg) {
+            eprintln!(
+                "Error encoding config:\n  code: {:?}\n  position:\n    line: {}\n    column: {}",
+                e.code,
+                e.position.line,
+                e.position.col,
+            );
+            return Err(e.into());
         }
+        Ok(())
     }
 
     /// Returns the address for the root of this capsule
