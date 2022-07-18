@@ -97,7 +97,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
         }
         None => {}
     }
-    capsule.render_tags(&output)?;
+    capsule.write_tags(&output)?;
     capsule.render_index(&output)?;
     capsule.write_gemlog_index(&output)?;
     Ok(())
@@ -233,48 +233,51 @@ impl Capsule {
     }
 
     /// Creates a gemtext page for each tag and an index page of all tags
-    fn render_tags(&self, output: &Path) -> Result<(), crate::Error> {
+    fn write_tags(&self, output: &Path) -> Result<(), crate::Error> {
         let index_path = Index::get_path(output, Some(&PathBuf::from("tags")));
-        let base_url = CONFIG.url()?;
-        let tags_url = base_url.join("tags/")?;
-        let mut index_page = match &self.banner {
-            Some(s) => format!("```\n{}\n```# {}\n\n### All tags\n", s, &CONFIG.title),
-            None => format!("# {}\n\n### All tags\n", &CONFIG.title),
-        };
         let mut dest = PathBuf::from(output);
         dest.push("tags");
         if !dest.exists() {
             fs::create_dir_all(&dest)?;
         }
+        let fd = File::create(index_path)?;
+        let mut writer = BufWriter::new(fd);
+        let base_url = CONFIG.url()?;
+        let tags_url = base_url.join("tags/")?;
+        match &self.banner {
+            Some(s) => writeln!(&mut writer, "```\n{}\n```# {}\n\n### All tags", s, &CONFIG.title)?,
+            None => writeln!(&mut writer, "# {}\n\n### All tags\n", &CONFIG.title)?,
+        }
         for (tag, links) in &self.tags {
-            writeln!(index_page, "=> {}.gmi {}", &tag, &tag)?;
+            writeln!(&mut writer, "=> {}.gmi {}", &tag, &tag)?;
             let mut dest = dest.clone();
             dest.push(tag);
             dest.set_extension("gmi");
-            let mut page = match &self.banner {
-                Some(s) => format!(
-                    "```\n{s}\n```# {}\n\n### Pages tagged {}\n",
+            let fd = File::create(dest)?;
+            let mut tagwriter = BufWriter::new(fd);
+            match &self.banner {
+                Some(s) => writeln!(
+                    &mut tagwriter,
+                    "```\n{s}\n```# {}\n\n### Pages tagged {}",
                     &CONFIG.title, &tag
-                ),
-                None => format!("# {}\n\n### Pages tagged {}\n", &CONFIG.title, &tag),
-            };
+                )?,
+                None => writeln!(&mut tagwriter, "# {}\n\n### Pages tagged {}", &CONFIG.title, &tag)?,
+            }
             for link in links {
                 let url = if let Some(u) = tags_url.make_relative(&Url::parse(&link.url)?) {
                     Cow::from(u.to_string())
                 } else {
                     Cow::from(&link.url)
                 };
-                writeln!(page, "=> {url} {}", link.display)?;
+                writeln!(&mut tagwriter, "=> {url} {}", link.display)?;
             }
-            page.push_str("\n=> . All tags\n=> .. Home\n");
+            writeln!(&mut tagwriter, "=> . All tags\n=> .. Home")?;
             let year = Utc::now().date().year();
-            crate::footer(&mut page, year)?;
-            fs::write(&dest, &page.as_bytes())?;
+            crate::write_footer(&mut tagwriter, year)?;
         }
-        index_page.push_str("\n=> .. Home\n");
+        writeln!(&mut writer, "\n=> .. Home")?;
         let year = Utc::now().date().year();
-        crate::footer(&mut index_page, year)?;
-        Index(index_page).to_disk(&index_path)?;
+        crate::write_footer(&mut writer, year)?;
         Ok(())
     }
 
