@@ -7,7 +7,7 @@ use {
     std::{
         fmt::Write as _,
         fs::{self, File},
-        io::{BufReader, Write},
+        io::{BufReader, BufWriter, Write},
         path::{Path, PathBuf},
         process,
     },
@@ -123,6 +123,26 @@ pub fn footer(page: &mut String, year: i32) -> Result<(), crate::Error> {
     if CONFIG.show_email {
         if let Some(ref email) = CONFIG.author.email {
             writeln!(page, "=> mailto:{email} Contact")?;
+        }
+    }
+    Ok(())
+}
+
+pub fn write_footer(writer: &mut BufWriter<File>, year: i32) -> Result<(), crate::Error> {
+    writeln!(writer)?;
+    if let Some(license) = &CONFIG.license {
+        writeln!(
+            writer,
+            "All content for this site is released under the {license} license."
+        )?;
+    }
+    writeln!(writer, "© {} by {}", year, CONFIG.author.name,)?;
+    for link in &CONFIG.footer_links {
+        writeln!(writer, "{link}")?;
+    }
+    if CONFIG.show_email {
+        if let Some(ref email) = CONFIG.author.email {
+            writeln!(writer, "=> mailto:{email} Contact")?;
         }
     }
     Ok(())

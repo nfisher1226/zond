@@ -12,7 +12,8 @@ use {
         borrow::Cow,
         collections::{BTreeMap, HashMap},
         fmt::Write,
-        fs,
+        fs::{self, File},
+        io::{BufWriter, Write as IoWrite},
         path::{Path, PathBuf},
     },
     url::Url,
@@ -98,7 +99,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     }
     capsule.render_tags(&output)?;
     capsule.render_index(&output)?;
-    capsule.render_gemlog_index(&output)?;
+    capsule.write_gemlog_index(&output)?;
     Ok(())
 }
 
@@ -314,20 +315,22 @@ impl Capsule {
         Ok(())
     }
 
-    /// Renders the gemlog index
-    fn render_gemlog_index(&self, output: &Path) -> Result<(), crate::Error> {
+    /// Renders the gemlog index and writes it to disk
+    fn write_gemlog_index(&self, output: &Path) -> Result<(), crate::Error> {
         let origin: PathBuf = ["content", "gemlog", "index.gmi"].iter().collect();
+        let outfile = Index::get_path(&PathBuf::from(output), Some(&PathBuf::from("gemlog")));
+        let fd = File::create(outfile)?;
+        let mut writer = BufWriter::new(fd);
         let page = if let Some(p) = Page::from_path(&origin) {
             p
         } else {
             Page::default()
         };
-        let mut content = match &self.banner {
-            Some(s) => format!("```\n{}\n```# {}\n\n", s, &CONFIG.title),
-            None => format!("# {}\n\n", &CONFIG.title),
-        };
-        content.push_str(&page.content);
-        content.push_str("\n\n### Gemlog posts\n");
+        match &self.banner {
+            Some(s) => write!(&mut writer, "```\n{s}\n```# {}\n\n", &CONFIG.title)?,
+            None => write!(&mut writer, "# {}\n\n", &CONFIG.title)?,
+        }
+        write!(&mut writer, "{}\n\n### Gemlog posts\n", &page.content)?;
         let base = CONFIG.url()?;
         let base = base.join("gemlog/index.gmi")?;
         for post in self.posts.values().rev() {
@@ -337,25 +340,23 @@ impl Capsule {
             } else {
                 Cow::from(&post.link.url)
             };
-            writeln!(content, "=> {url} {}", post.link.display)?;
+            writeln!(&mut writer, "=> {url} {}", post.link.display)?;
         }
         match &CONFIG.feed {
             Some(crate::config::Feed::Atom) => {
-                writeln!(content, "\n=> atom.xml Atom Feed")?;
+                writeln!(&mut writer, "\n=> atom.xml Atom Feed")?;
             }
             Some(crate::config::Feed::Gemini) => {
-                writeln!(content, "\n=> feed.gmi Gemini Feed")?;
+                writeln!(&mut writer, "\n=> feed.gmi Gemini Feed")?;
             }
             Some(crate::config::Feed::Both) => {
-                writeln!(content, "\n=> atom.xml Atom Feed\n=> feed.gmi Gemini Feed")?;
+                writeln!(&mut writer, "\n=> atom.xml Atom Feed\n=> feed.gmi Gemini Feed")?;
             }
             None => {}
         }
-        writeln!(content, "\n=> ../tags tags\n=> .. Home")?;
+        writeln!(&mut writer, "\n=> ../tags tags\n=> .. Home")?;
         let year = Utc::now().date().year();
-        crate::footer(&mut content, year)?;
-        let path = Index::get_path(&PathBuf::from(output), Some(&PathBuf::from("gemlog")));
-        Index(content).to_disk(&path)?;
+        crate::write_footer(&mut writer, year)?;
         Ok(())
     }
 }

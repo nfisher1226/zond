@@ -113,7 +113,7 @@ impl ToDisk for Page {
         let mut writer = BufWriter::new(fd);
         let pcfg = PrettyConfig::new().struct_names(true).decimal_floats(true);
         let header = to_string_pretty(&self.meta, pcfg)?;
-        writer.write_fmt(format_args!("{header}\n---\n{}", &self.content))?;
+        write!(&mut writer, "{header}\n---\n{}", &self.content)?;
         Ok(())
     }
 }
