@@ -5,7 +5,6 @@ use {
     config::Config,
     once_cell::sync::Lazy,
     std::{
-        fmt::Write as _,
         fs::{self, File},
         io::{BufReader, BufWriter, Write},
         path::{Path, PathBuf},
@@ -103,29 +102,6 @@ impl GetPath for Feed {
         path.push("atom.xml");
         path
     }
-}
-
-/// Writes the footer for each page
-/// # Errors
-/// Returns `fmt::Error` if formatting fails
-pub fn footer(page: &mut String, year: i32) -> Result<(), crate::Error> {
-    page.push('\n');
-    if let Some(license) = &CONFIG.license {
-        writeln!(
-            page,
-            "All content for this site is released under the {license} license."
-        )?;
-    }
-    writeln!(page, "© {} by {}", year, CONFIG.author.name,)?;
-    for link in &CONFIG.footer_links {
-        writeln!(page, "{link}")?;
-    }
-    if CONFIG.show_email {
-        if let Some(ref email) = CONFIG.author.email {
-            writeln!(page, "=> mailto:{email} Contact")?;
-        }
-    }
-    Ok(())
 }
 
 /// Writes the footer for each page
