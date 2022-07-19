@@ -14,9 +14,8 @@ use {
     serde::{Deserialize, Serialize},
     std::{
         borrow::Cow,
-        fmt::Write,
         fs::{self, File},
-        io::{BufWriter, Write as IoWrite},
+        io::{BufWriter, Write},
         path::{Path, PathBuf},
     },
     url::Url,
@@ -194,41 +193,50 @@ impl Page {
     }
 
     /// Render a page and save it to disk
-    pub fn render(
+    pub fn write(
         &self,
         path: &Path,
         depth: usize,
         banner: &Option<String>,
     ) -> Result<(), crate::Error> {
-        let mut page = match banner {
-            Some(s) => format!(
-                "```\n{s}\n```\n# {}\n### {}\n{}\n\n",
+        if let Some(p) = path.parent() {
+            if !p.exists() {
+                fs::create_dir_all(p)?;
+            }
+        }
+        let fd = File::create(path)?;
+        let mut writer = BufWriter::new(fd);
+        match banner {
+            Some(s) => writeln!(
+                &mut writer,
+                "```\n{s}\n```\n# {}\n### {}\n{}\n",
                 self.meta.title,
                 self.meta.published.as_ref().unwrap().date_string(),
                 self.content
-            ),
-            None => format!(
-                "# {}\n### {}\n{}\n\n",
+            )?,
+            None => writeln!(
+                &mut writer,
+                "# {}\n### {}\n{}\n",
                 self.meta.title,
                 self.meta.published.as_ref().unwrap().date_string(),
                 self.content
-            ),
-        };
+            )?,
+        }
         if !self.meta.tags.is_empty() {
-            writeln!(page, "### Tags for this page")?;
+            writeln!(&mut writer, "### Tags for this page")?;
             let u = CONFIG.url()?;
             for tag in &self.meta.tags {
                 match depth {
-                    1 => writeln!(page, "=> tags/{tag}.gmi {tag}")?,
-                    2 => writeln!(page, "=> ../tags/{tag}.gmi {tag}")?,
-                    3 => writeln!(page, "=> ../../tags/{tag}.gmi {tag}")?,
-                    _ => writeln!(page, "=> {u}/tags/{tag}.gmi {tag}")?,
+                    1 => writeln!(&mut writer, "=> tags/{tag}.gmi {tag}")?,
+                    2 => writeln!(&mut writer, "=> ../tags/{tag}.gmi {tag}")?,
+                    3 => writeln!(&mut writer, "=> ../../tags/{tag}.gmi {tag}")?,
+                    _ => writeln!(&mut writer, "=> {u}/tags/{tag}.gmi {tag}")?,
                 }
             }
-            page.push('\n');
+            writeln!(&mut writer)?;
         }
         writeln!(
-            page,
+            &mut writer,
             "=> {} Home",
             match depth {
                 1 => Cow::from("."),
@@ -240,19 +248,13 @@ impl Page {
             if let Some(n) = p.file_name() {
                 if let Some(s) = n.to_str() {
                     if s == "gemlog" {
-                        writeln!(page, "=> . All posts")?;
+                        writeln!(&mut writer, "=> . All posts")?;
                     }
                 }
             }
         }
         let year = self.meta.published.as_ref().unwrap().year();
-        crate::footer(&mut page, year)?;
-        if let Some(p) = path.parent() {
-            if !p.exists() {
-                fs::create_dir_all(p)?;
-            }
-        }
-        fs::write(path, &page)?;
+        crate::write_footer(&mut writer, year)?;
         Ok(())
     }
 }

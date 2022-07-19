@@ -167,14 +167,14 @@ impl Capsule {
                                     }
                                 }
                                 if last.starts_with("gemlog") {
-                                    page.render(&output, depth, &banner)?;
+                                    page.write(&output, depth, &banner)?;
                                     let post = Post {
                                         link,
                                         meta: page.meta.clone(),
                                     };
                                     posts.insert(time.timestamp()?, post);
                                 } else {
-                                    page.render(&output, depth, &banner)?;
+                                    page.write(&output, depth, &banner)?;
                                 }
                             }
                         }
