@@ -7,7 +7,11 @@ use {
     atom_syndication as atom,
     ron::ser::{to_writer_pretty, PrettyConfig},
     serde::{Deserialize, Serialize},
-    std::{fs::{self, File}, io::BufWriter, path::PathBuf},
+    std::{
+        fs::{self, File},
+        io::BufWriter,
+        path::PathBuf,
+    },
     url::Url,
 };
 
@@ -105,9 +109,7 @@ impl Config {
         if let Err(e) = to_writer_pretty(writer, &self, pcfg) {
             eprintln!(
                 "Error encoding config:\n  code: {:?}\n  position:\n    line: {}\n    column: {}",
-                e.code,
-                e.position.line,
-                e.position.col,
+                e.code, e.position.line, e.position.col,
             );
             return Err(e.into());
         }

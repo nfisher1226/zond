@@ -59,7 +59,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
         None => {}
     }
     capsule.write_tags(&output)?;
-    capsule.render_index(&output)?;
+    capsule.write_index(&output)?;
     capsule.write_gemlog_index(&output)?;
     Ok(())
 }
@@ -206,7 +206,11 @@ impl Capsule {
         let base_url = CONFIG.url()?;
         let tags_url = base_url.join("tags/")?;
         match &self.banner {
-            Some(s) => writeln!(&mut writer, "```\n{}\n```# {}\n\n### All tags", s, &CONFIG.title)?,
+            Some(s) => writeln!(
+                &mut writer,
+                "```\n{}\n```# {}\n\n### All tags",
+                s, &CONFIG.title
+            )?,
             None => writeln!(&mut writer, "# {}\n\n### All tags\n", &CONFIG.title)?,
         }
         for (tag, links) in &self.tags {
@@ -222,7 +226,11 @@ impl Capsule {
                     "```\n{s}\n```# {}\n\n### Pages tagged {}",
                     &CONFIG.title, &tag
                 )?,
-                None => writeln!(&mut tagwriter, "# {}\n\n### Pages tagged {}", &CONFIG.title, &tag)?,
+                None => writeln!(
+                    &mut tagwriter,
+                    "# {}\n\n### Pages tagged {}",
+                    &CONFIG.title, &tag
+                )?,
             }
             for link in links {
                 let url = if let Some(u) = tags_url.make_relative(&Url::parse(&link.url)?) {
@@ -242,9 +250,12 @@ impl Capsule {
         Ok(())
     }
 
-    /// Renders the capsule main index
-    fn render_index(&self, output: &Path) -> Result<(), crate::Error> {
+    /// Renders the capsule main index and writes it to disk
+    fn write_index(&self, output: &Path) -> Result<(), crate::Error> {
         let origin: PathBuf = ["content", "index.gmi"].iter().collect();
+        let outfile = Index::get_path(&PathBuf::from(output), None);
+        let fd = File::create(outfile)?;
+        let mut writer = BufWriter::new(fd);
         let page = if let Some(p) = Page::from_path(&origin) {
             p
         } else {
@@ -252,12 +263,10 @@ impl Capsule {
             idx.content.push_str("{% posts %}");
             idx
         };
-        let mut content = match &self.banner {
-            Some(s) => format!("```\n{}\n```# {}\n\n", s, &CONFIG.title),
-            None => format!("# {}\n\n", &CONFIG.title),
-        };
-        content.push_str(&page.content);
-        content.push('\n');
+        match &self.banner {
+            Some(s) => writeln!(&mut writer, "```\n{s}\n```# {}\n", &CONFIG.title)?,
+            None => writeln!(&mut writer, "# {}\n", &CONFIG.title)?,
+        }
         let mut posts = String::from("### Gemlog posts\n");
         let num = std::cmp::min(CONFIG.entries, self.posts.len());
         let base = CONFIG.url()?;
@@ -271,11 +280,10 @@ impl Capsule {
             writeln!(posts, "=> {url} {}", post.link.display)?;
         }
         posts.push_str("=> gemlog/ All posts\n");
-        let mut content = content.replace("{% posts %}", &posts);
+        let content = page.content.replace("{% posts %}", &posts);
+        writeln!(&mut writer, "{}", content)?;
         let year = Utc::now().date().year();
-        crate::footer(&mut content, year)?;
-        let path = Index::get_path(&PathBuf::from(output), None);
-        Index(content).to_disk(&path)?;
+        crate::write_footer(&mut writer, year)?;
         Ok(())
     }
 
@@ -314,7 +322,10 @@ impl Capsule {
                 writeln!(&mut writer, "\n=> feed.gmi Gemini Feed")?;
             }
             Some(crate::config::Feed::Both) => {
-                writeln!(&mut writer, "\n=> atom.xml Atom Feed\n=> feed.gmi Gemini Feed")?;
+                writeln!(
+                    &mut writer,
+                    "\n=> atom.xml Atom Feed\n=> feed.gmi Gemini Feed"
+                )?;
             }
             None => {}
         }

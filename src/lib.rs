@@ -128,6 +128,10 @@ pub fn footer(page: &mut String, year: i32) -> Result<(), crate::Error> {
     Ok(())
 }
 
+/// Writes the footer for each page
+/// # Errors
+/// Returns `fmt::Error` if formatting fails
+/// Returns `io::Error` if writing to disk fails
 pub fn write_footer(writer: &mut BufWriter<File>, year: i32) -> Result<(), crate::Error> {
     writeln!(writer)?;
     if let Some(license) = &CONFIG.license {
