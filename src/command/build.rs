@@ -25,41 +25,6 @@ type Posts = BTreeMap<i64, Post>;
 /// A `HashMap` of tag names and their associated links
 type Tags = HashMap<String, Vec<Link>>;
 
-#[derive(Clone)]
-/// Wrapper type around the text of a gemini feed
-struct GemFeed(String);
-
-impl ToDisk for GemFeed {
-    type Err = crate::Error;
-
-    fn to_disk(&self, path: &Path) -> Result<(), Self::Err> {
-        fs::write(path, &self.0)?;
-        Ok(())
-    }
-}
-
-impl GetPath for GemFeed {
-    fn get_path(root: &Path, _subdir: Option<&Path>) -> PathBuf {
-        let mut path = root.to_path_buf();
-        path.push("gemlog");
-        path.push("feed.gmi");
-        path
-    }
-}
-
-impl TryFrom<&Capsule> for GemFeed {
-    type Error = crate::Error;
-
-    /// Generates a Gemini feed from the metadata
-    fn try_from(capsule: &Capsule) -> Result<GemFeed, Self::Error> {
-        let mut page = format!("# {}\n\n", &CONFIG.title);
-        for entry in capsule.posts.values().rev() {
-            writeln!(page, "{}", entry.link,)?;
-        }
-        Ok(GemFeed(page))
-    }
-}
-
 /// Performs the build
 /// # Errors
 /// Errors are bubbled up from the called functions
@@ -83,17 +48,13 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
             atom.to_disk(&dest)?;
         }
         Some(crate::config::Feed::Gemini) => {
-            let feed = GemFeed::try_from(&capsule)?;
-            let dest = GemFeed::get_path(&output, None);
-            feed.to_disk(&dest)?;
+            capsule.write_gemfeed(&output)?;
         }
         Some(crate::config::Feed::Both) => {
             let atom = Feed::try_from(&capsule)?;
             let dest = Feed::get_path(&output, None);
             atom.to_disk(&dest)?;
-            let feed = GemFeed::try_from(&capsule)?;
-            let dest = GemFeed::get_path(&output, None);
-            feed.to_disk(&dest)?;
+            capsule.write_gemfeed(&output)?;
         }
         None => {}
     }
@@ -360,6 +321,19 @@ impl Capsule {
         writeln!(&mut writer, "\n=> ../tags tags\n=> .. Home")?;
         let year = Utc::now().date().year();
         crate::write_footer(&mut writer, year)?;
+        Ok(())
+    }
+
+    fn write_gemfeed(&self, output: &Path) -> Result<(), crate::Error> {
+        let mut outfile = output.to_path_buf();
+        outfile.push("gemlog");
+        outfile.push("feed.gmi");
+        let fd = File::create(outfile)?;
+        let mut writer = BufWriter::new(fd);
+        writeln!(&mut writer, "# {}\n", &CONFIG.title)?;
+        for entry in self.posts.values().rev() {
+            writeln!(&mut writer, "{}", entry.link,)?;
+        }
         Ok(())
     }
 }
