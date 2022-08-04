@@ -50,6 +50,9 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
             }
         };
     }
+    if let Some(d) = matches.value_of("display_email") {
+        cfg.display_date = d.parse()?;
+    }
     if let Some(f) = matches.value_of("feed") {
         match f {
             "Atom" | "atom" => cfg.feed = Some(Feed::Atom),

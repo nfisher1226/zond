@@ -7,7 +7,7 @@ mod time;
 
 pub use time::Time;
 use {
-    crate::{ToDisk, CONFIG},
+    crate::{ToDisk, config::DisplayDate, CONFIG},
     atom_syndication as atom,
     extract_frontmatter::{config::Splitter, Extractor},
     ron::ser::{to_string_pretty, PrettyConfig},
@@ -206,21 +206,13 @@ impl Page {
         }
         let fd = File::create(path)?;
         let mut writer = BufWriter::new(fd);
-        match banner {
-            Some(s) => writeln!(
-                &mut writer,
-                "```\n{s}\n```\n# {}\n### {}\n{}\n",
-                self.meta.title,
-                self.meta.published.as_ref().unwrap().date_string(),
-                self.content
-            )?,
-            None => writeln!(
-                &mut writer,
-                "# {}\n### {}\n{}\n",
-                self.meta.title,
-                self.meta.published.as_ref().unwrap().date_string(),
-                self.content
-            )?,
+        if let Some(s) = banner {
+            writeln!(&mut writer, "```\n{s}\n```")?;
+        }
+        writeln!(&mut writer, "# {}", self.meta.title)?;
+        match &CONFIG.display_date {
+            DisplayDate::Always | DisplayDate::GemlogOnly if path.parent().unwrap().to_str().unwrap().ends_with("gemlog") => writeln!(&mut writer, "### {}\n{}\n", self.meta.published.as_ref().unwrap().date_string(), self.content)?,
+            _ => writeln!(&mut writer, "### {}\n", self.content)?,
         }
         if !self.meta.tags.is_empty() {
             writeln!(&mut writer, "### Tags for this page")?;

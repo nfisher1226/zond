@@ -15,6 +15,8 @@ pub enum Error {
     ParseBoolError,
     /// An error parsing an integer from the command line
     ParseIntError,
+    /// An error parsing an enum type from a string slice
+    ParseEnumError,
     /// An error reading or writing the configuration file
     RonError(ron::Error),
     /// An error parsing the time of publication
@@ -87,6 +89,7 @@ impl fmt::Display for Error {
             Self::PathPrefixError => write!(f, "Path prefix error"),
             Self::ParseBoolError => write!(f, "Parse bool error"),
             Self::ParseIntError => write!(f, "Parse int error"),
+            Self::ParseEnumError => write!(f, "Parse enum error"),
             Self::RonError(e) => {
                 write!(
                     f,

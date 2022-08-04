@@ -62,6 +62,14 @@ pub fn init() -> Command<'static> {
                  .multiple_values(false)
         )
         .arg(
+            Arg::new("display_date")
+                .short('D')
+                .long("display_date")
+                .help("Which pages to display the publication date under the title (always|gemlog|never)")
+                .takes_value(true)
+                .multiple_values(false)
+        )
+        .arg(
              Arg::new("feed")
                  .short('f')
                  .long("feed")

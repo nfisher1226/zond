@@ -2,6 +2,8 @@
 mod license;
 
 pub use license::License;
+
+use crate::Error;
 use {
     crate::link::Link,
     atom_syndication as atom,
@@ -11,25 +13,21 @@ use {
         fs::{self, File},
         io::BufWriter,
         path::PathBuf,
+        str::FromStr,
     },
     url::Url,
 };
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 /// The type of feed to generate
 pub enum Feed {
     /// Only an Atom feed will be generated
+    #[default]
     Atom,
     /// Only a Gemini feed will be generated
     Gemini,
     /// Both Atom and Gemini feeds will be generated
     Both,
-}
-
-impl Default for Feed {
-    fn default() -> Self {
-        Self::Atom
-    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -54,6 +52,30 @@ impl Person {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+pub enum DisplayDate {
+    /// Always display the publication date
+    Always,
+    /// Only display the publication date on gemlog posts
+    #[default]
+    GemlogOnly,
+    /// Never display the date
+    Never,
+}
+
+impl FromStr for DisplayDate {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "always" | "Always" => Ok(Self::Always),
+            "gemlogonly" | "gemlog" | "gemlog_only" | "GemlogOnly" | "Gemlog" => Ok(Self::GemlogOnly),
+            "never" | "Never" => Ok(Self::Never),
+            _ => Err(Error::ParseEnumError),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 /// Site wide capsule settings
 pub struct Config {
     /// Title of the entire capsule
@@ -66,6 +88,8 @@ pub struct Config {
     pub path: Option<String>,
     /// The number of gemlog entries to display on the main index
     pub entries: usize,
+    /// Which pages to display the publication date for
+    pub display_date: DisplayDate,
     /// Whether to generate atom and/or gemini feeds
     pub feed: Option<Feed>,
     /// The license which the content of this capsule is published under
