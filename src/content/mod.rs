@@ -221,7 +221,7 @@ impl Page {
                     self.content
                 )?
             }
-            _ => writeln!(&mut writer, "### {}\n", self.content)?,
+            _ => writeln!(&mut writer, "{}\n", self.content)?,
         }
         if !self.meta.tags.is_empty() {
             writeln!(&mut writer, "### Tags for this page")?;
