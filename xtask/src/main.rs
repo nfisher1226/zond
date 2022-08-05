@@ -1,6 +1,7 @@
 use {
     clap_complete::{generate_to, shells},
     clap_mangen::Man,
+    pulldown_cmark::{html, Parser},
     std::{env, error::Error, fs, path::PathBuf, process},
 };
 
@@ -17,9 +18,14 @@ fn docs() -> Result<(), std::io::Error> {
     for doc in docs {
         let mut outfile = outdir.clone();
         outfile.push(doc);
+        outfile.set_extension("html");
         let infile: PathBuf = ["doc", doc].iter().collect();
-    fs::copy(&infile, &outfile)?;
-    println!("    {} -> {}", infile.display(), outfile.display());
+        let mdstr = fs::read_to_string(&infile)?;
+        let mdstr = mdstr.replace(".md", ".html");
+        let parser = Parser::new(&mdstr);
+        let fd = fs::File::create(&outfile)?;
+        html::write_html(fd, parser)?;
+        println!("    {} -> {}", infile.display(), outfile.display());
     }
     Ok(())
 }
