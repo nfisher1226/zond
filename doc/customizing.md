@@ -12,6 +12,7 @@ file. Here's an example.
     domain: "black.sabbath.fm",
     path: None,
     entries: 3,
+    display_date: GemlogOnly,
     feed: Some(Both),
     license: Some(CcBySa),
     show_email: true,
@@ -33,6 +34,8 @@ file. Here's an example.
   entries will appear wherever in the index the string `{% posts %}` appears in
   the index source (content/index.gmi). If the string is left off entirely then
   no posts will be displayed.
+* display_date - one of **Always**, **GemlogOnly** or **Never**. This controls
+  which pages will have the publication date displayed underneath the title.
 * feed - which feeds to generate. This can be Some(Gemini), Some(Atom), Some(Both),
   or None.
 * license - For no license, put `None` here. Recognized licenses are as laid out

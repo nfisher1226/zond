@@ -68,7 +68,9 @@ impl FromStr for DisplayDate {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "always" | "Always" => Ok(Self::Always),
-            "gemlogonly" | "gemlog" | "gemlog_only" | "GemlogOnly" | "Gemlog" => Ok(Self::GemlogOnly),
+            "gemlogonly" | "gemlog" | "gemlog_only" | "GemlogOnly" | "Gemlog" => {
+                Ok(Self::GemlogOnly)
+            }
             "never" | "Never" => Ok(Self::Never),
             _ => Err(Error::ParseEnumError),
         }

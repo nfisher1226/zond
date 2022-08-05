@@ -7,7 +7,7 @@ mod time;
 
 pub use time::Time;
 use {
-    crate::{ToDisk, config::DisplayDate, CONFIG},
+    crate::{config::DisplayDate, ToDisk, CONFIG},
     atom_syndication as atom,
     extract_frontmatter::{config::Splitter, Extractor},
     ron::ser::{to_string_pretty, PrettyConfig},
@@ -211,7 +211,16 @@ impl Page {
         }
         writeln!(&mut writer, "# {}", self.meta.title)?;
         match &CONFIG.display_date {
-            DisplayDate::Always | DisplayDate::GemlogOnly if path.parent().unwrap().to_str().unwrap().ends_with("gemlog") => writeln!(&mut writer, "### {}\n{}\n", self.meta.published.as_ref().unwrap().date_string(), self.content)?,
+            DisplayDate::Always | DisplayDate::GemlogOnly
+                if path.parent().unwrap().to_str().unwrap().ends_with("gemlog") =>
+            {
+                writeln!(
+                    &mut writer,
+                    "### {}\n{}\n",
+                    self.meta.published.as_ref().unwrap().date_string(),
+                    self.content
+                )?
+            }
             _ => writeln!(&mut writer, "### {}\n", self.content)?,
         }
         if !self.meta.tags.is_empty() {
