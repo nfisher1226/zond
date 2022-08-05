@@ -6,6 +6,24 @@ use {
 
 include!("../../src/cli.rs");
 
+fn docs() -> Result<(), std::io::Error> {
+    let docs = ["build.md", "customizing.md", "index.md", "page.md", "post.md"];
+    let outdir: PathBuf = ["target", "dist", "share", "doc", "zond"]
+        .iter()
+        .collect();
+    if !outdir.exists() {
+        fs::create_dir_all(&outdir)?;
+    }
+    for doc in docs {
+        let mut outfile = outdir.clone();
+        outfile.push(doc);
+        let infile: PathBuf = ["doc", doc].iter().collect();
+    fs::copy(&infile, &outfile)?;
+    println!("    {} -> {}", infile.display(), outfile.display());
+    }
+    Ok(())
+}
+
 fn completions() -> Result<(), Box<dyn Error>> {
     println!("Generating completions:");
     let mut cmd = zond();
@@ -112,6 +130,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         copy_bin()?;
         completions()?;
         manpages()?;
+        docs()?;
     } else {
         usage();
     }
