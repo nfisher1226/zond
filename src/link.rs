@@ -8,6 +8,7 @@ use {
 /// Represents both a url and the text to be displayed
 pub struct Link {
     pub url: String,
+    /// The string which will be displayed in lieu of the full url
     pub display: String,
 }
 
@@ -18,6 +19,8 @@ impl fmt::Display for Link {
 }
 
 impl Link {
+    /// Takes the original path in the content tree and meta information and
+    /// returns a `Link` struct
     pub fn get(origin: &Path, meta: &Meta) -> Result<Self, crate::Error> {
         let mut url = CONFIG.url()?;
         let mut current = std::env::current_dir()?;

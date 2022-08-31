@@ -5,6 +5,8 @@ use clap::{Arg, ArgGroup, Command};
 pub fn init() -> Command<'static> {
     Command::new("init")
         .about("Initialize a new capsule")
+        .visible_alias("in")
+        .visible_short_flag_alias('i')
         .arg(
              Arg::new("title")
                  .short('t')
@@ -97,14 +99,18 @@ pub fn init() -> Command<'static> {
 #[must_use]
 /// The build subcommand
 pub fn build() -> Command<'static> {
-    Command::new("build").about("Build the capsule").arg(
-        Arg::new("output")
-            .short('o')
-            .long("output")
-            .help("The location to output the generated capsule")
-            .takes_value(true)
-            .multiple_values(false),
-    )
+    Command::new("build")
+        .about("Build the capsule")
+        .visible_alias("bld")
+        .visible_short_flag_alias('b')
+        .arg(
+            Arg::new("output")
+                .short('o')
+                .long("output")
+                .help("The location to output the generated capsule")
+                .takes_value(true)
+                .multiple_values(false),
+        )
 }
 
 #[must_use]
@@ -112,6 +118,8 @@ pub fn build() -> Command<'static> {
 pub fn post_init() -> Command<'static> {
     Command::new("init")
         .about("Initializes a new post")
+        .visible_alias("in")
+        .visible_short_flag_alias('i')
         .arg(
             Arg::new("summary")
                 .help("A short summary of the post (optional)")
@@ -154,6 +162,7 @@ pages, may also be categorized using tags, and a page will be auto generated for
 every tag in the capsule with links to every page and gemlog post which includes
 that tag.",
         )
+        .visible_alias("po")
         .arg(
             Arg::new("title")
                 .help("The title of the post")
@@ -161,8 +170,17 @@ that tag.",
                 .multiple_values(false),
         )
         .subcommand(post_init())
-        .subcommand(Command::new("publish").about("Marks the post as published"))
-        .subcommand(Command::new("edit").about("Opens the post in an editor"))
+        .subcommand(
+            Command::new("publish")
+                .about("Marks the post as published")
+                .visible_alias("pub"),
+        )
+        .subcommand(
+            Command::new("edit")
+                .about("Opens the post in an editor")
+                .visible_alias("ed")
+                .visible_short_flag_alias('e'),
+        )
 }
 
 #[must_use]
@@ -170,6 +188,8 @@ that tag.",
 pub fn page_init() -> Command<'static> {
     Command::new("init")
         .about("Initializes a new page")
+        .visible_alias("in")
+        .visible_short_flag_alias('i')
         .arg(
             Arg::new("summary")
                 .help("A short summary of the page (optional)")
@@ -213,6 +233,7 @@ capsule is first generated, will also display a configurable number of gemlog
 post links wherever the string \"{% posts %}\" is placed within it's content
 section.",
         )
+        .visible_alias("pg")
         .arg(
             Arg::new("title")
                 .help("The title of the page")
@@ -236,8 +257,17 @@ section.",
                 .multiple(true),
         )
         .subcommand(page_init())
-        .subcommand(Command::new("publish").about("Marks the page as published"))
-        .subcommand(Command::new("edit").about("Opens the page in an editor"))
+        .subcommand(
+            Command::new("publish")
+                .about("Marks the page as published")
+                .visible_alias("pub"),
+        )
+        .subcommand(
+            Command::new("edit")
+                .about("Opens the page in an editor")
+                .visible_short_flag_alias('e')
+                .visible_alias("ed"),
+        )
 }
 
 #[must_use]
