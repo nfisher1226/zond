@@ -31,7 +31,7 @@ type Tags = HashMap<String, Vec<Link>>;
 pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     let mut output = PathBuf::from(matches.value_of("output").unwrap_or("public"));
     if let Some(ref path) = CONFIG.path {
-        output.push(&path);
+        output.push(path);
     }
     if !output.exists() {
         std::fs::create_dir_all(&output)?;
@@ -146,7 +146,7 @@ impl Capsule {
                 }
             }
             let mut output = output.to_path_buf();
-            output.push(&last);
+            output.push(last);
             if let Some(parent) = output.parent() {
                 if !parent.exists() {
                     std::fs::create_dir_all(parent)?;
@@ -281,7 +281,7 @@ impl Capsule {
         }
         posts.push_str("=> gemlog/ All posts\n");
         let content = page.content.replace("{% posts %}", &posts);
-        writeln!(&mut writer, "{}", content)?;
+        writeln!(&mut writer, "{content}")?;
         let year = Utc::now().date().year();
         crate::write_footer(&mut writer, year)?;
         Ok(())

@@ -16,7 +16,7 @@ pub fn edit(file: &str) -> Result<(), crate::Error> {
 
 fn run(handler: &str, arg: &str) -> Result<(), crate::Error> {
     if let Err(e) = Command::new(handler).arg(arg).status() {
-        Err(crate::Error::EditorError(format!("{}", e)))
+        Err(crate::Error::EditorError(format!("{e}")))
     } else {
         Ok(())
     }

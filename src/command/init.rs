@@ -25,14 +25,14 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
         if let Some((_user, _domain)) = email.split_once('@') {
             cfg.author.email = Some(email.to_string());
         } else {
-            return Err(format!("Invalid email address: {}", email).into());
+            return Err(format!("Invalid email address: {email}").into());
         }
     }
     if let Some(addr) = matches.value_of("url") {
         if let Ok(url) = Url::parse(addr) {
             cfg.author.url = Some(url.to_string());
         } else {
-            return Err(format!("Invalid url: {}", addr).into());
+            return Err(format!("Invalid url: {addr}").into());
         }
     }
     if let Some(domain) = matches.value_of("domain") {
@@ -58,7 +58,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
             "Atom" | "atom" => cfg.feed = Some(Feed::Atom),
             "Gemini" | "gemini" => cfg.feed = Some(Feed::Gemini),
             "Both" | "both" => cfg.feed = Some(Feed::Both),
-            s => return Err(format!("Invalid string: {}", s).into()),
+            s => return Err(format!("Invalid string: {s}").into()),
         }
     }
     if let Some(l) = matches.value_of("license") {

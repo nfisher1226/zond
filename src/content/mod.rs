@@ -159,7 +159,7 @@ impl Page {
         };
         let parent = file.parent().unwrap();
         if !parent.exists() {
-            fs::create_dir_all(&parent)?;
+            fs::create_dir_all(parent)?;
         }
         let meta = Meta {
             title: title.to_string(),
@@ -219,7 +219,7 @@ impl Page {
                     "### {}\n{}\n",
                     self.meta.published.as_ref().unwrap().date_string(),
                     self.content
-                )?
+                )?;
             }
             _ => writeln!(&mut writer, "{}\n", self.content)?,
         }

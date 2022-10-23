@@ -61,7 +61,7 @@ impl ToDisk for Feed {
     fn to_disk(&self, path: &Path) -> Result<(), Self::Err> {
         if let Some(p) = path.parent() {
             if !p.exists() {
-                if let Err(e) = fs::create_dir_all(&p) {
+                if let Err(e) = fs::create_dir_all(p) {
                     eprintln!(
                         "Error creating directory in trait `ToDisk` for `atom_syndication::Feed`"
                     );
@@ -116,7 +116,7 @@ pub fn write_footer(writer: &mut BufWriter<File>, year: i32) -> Result<(), crate
             "All content for this site is released under the {license} license."
         )?;
     }
-    writeln!(writer, "© {} by {}", year, CONFIG.author.name,)?;
+    writeln!(writer, "© {year} by {}", CONFIG.author.name,)?;
     for link in &CONFIG.footer_links {
         writeln!(writer, "{link}")?;
     }
