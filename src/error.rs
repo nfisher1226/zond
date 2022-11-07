@@ -63,6 +63,12 @@ impl From<ron::Error> for Error {
     }
 }
 
+impl From<ron::error::SpannedError> for Error {
+    fn from(err: ron::error::SpannedError) -> Self {
+        Self::RonError(err.into())
+    }
+}
+
 impl From<chrono::ParseError> for Error {
     fn from(err: chrono::ParseError) -> Self {
         Self::TimeError(err)
@@ -90,13 +96,7 @@ impl fmt::Display for Error {
             Self::ParseBoolError => write!(f, "Parse bool error"),
             Self::ParseIntError => write!(f, "Parse int error"),
             Self::ParseEnumError => write!(f, "Parse enum error"),
-            Self::RonError(e) => {
-                write!(
-                    f,
-                    "Ron error code: {}\nposition:\n  line: {}\n  column: {}",
-                    e.code, e.position.line, e.position.col,
-                )
-            }
+            Self::RonError(e) => write!(f, "Ron error: {e}"),
             Self::TimeError(e) => write!(f, "{e}"),
             Self::UrlError(e) => write!(f, "{e}"),
             Self::EditorError(e) | Self::OtherError(e) => write!(f, "{e}"),

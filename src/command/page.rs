@@ -5,21 +5,23 @@ use {crate::content, clap::ArgMatches, std::path::PathBuf};
 /// # Errors
 /// Errors are bubbled up from the called functions
 pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
-    let title = matches.value_of("title").unwrap_or("");
-    let path = matches.value_of("path").map(PathBuf::from);
+    let title = matches
+        .get_one::<String>("title")
+        .map_or("", std::string::String::as_str);
+    let path = matches.get_one::<String>("path").map(PathBuf::from);
     match matches.subcommand() {
         Some(("init", init_matches)) => {
-            let tags = match init_matches.values_of("tags") {
+            let tags = match init_matches.get_many::<String>("tags") {
                 Some(t) => t.map(std::string::ToString::to_string).collect::<Vec<_>>(),
                 None => Vec::new(),
             };
             content::Page::create(
                 content::Kind::Page(path.clone()),
                 title,
-                init_matches.value_of("summary"),
+                init_matches.get_one::<String>("summary").map(|x| &**x),
                 tags,
             )?;
-            if init_matches.is_present("edit") {
+            if init_matches.get_flag("edit") {
                 content::Page::edit(content::Kind::Page(path), title)?;
             }
         }

@@ -110,7 +110,7 @@ impl ToDisk for Page {
     fn to_disk(&self, path: &Path) -> Result<(), Self::Err> {
         let fd = File::create(path)?;
         let mut writer = BufWriter::new(fd);
-        let pcfg = PrettyConfig::new().struct_names(true).decimal_floats(true);
+        let pcfg = PrettyConfig::new().struct_names(true);
         let header = to_string_pretty(&self.meta, pcfg)?;
         write!(&mut writer, "{header}\n---\n{}", &self.content)?;
         Ok(())

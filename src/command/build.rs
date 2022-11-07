@@ -29,7 +29,11 @@ type Tags = HashMap<String, Vec<Link>>;
 /// # Errors
 /// Errors are bubbled up from the called functions
 pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
-    let mut output = PathBuf::from(matches.value_of("output").unwrap_or("public"));
+    let mut output = PathBuf::from(
+        matches
+            .get_one::<String>("output")
+            .map_or("public", std::string::String::as_str),
+    );
     if let Some(ref path) = CONFIG.path {
         output.push(path);
     }
@@ -100,8 +104,8 @@ impl TryFrom<&Capsule> for Feed {
             .id(url.to_string())
             .author(CONFIG.author.to_atom())
             .rights(atom::Text::plain(format!(
-                "© {} by {}",
-                year, &CONFIG.author.name
+                "© {year} by {}",
+                &CONFIG.author.name
             )))
             .base(url.to_string())
             .entries(entries)
@@ -138,7 +142,7 @@ impl Capsule {
         };
         for entry in WalkDir::new("content").into_iter().flatten() {
             let path = PathBuf::from(entry.path());
-            let path = std::fs::canonicalize(&path)?;
+            let path = std::fs::canonicalize(path)?;
             let last = path.strip_prefix(&current)?;
             if let Some(n) = last.to_str() {
                 if n == "index.gmi" || n == "gemlog/index.gmi" {
@@ -208,8 +212,8 @@ impl Capsule {
         match &self.banner {
             Some(s) => writeln!(
                 &mut writer,
-                "```\n{}\n```# {}\n\n### All tags",
-                s, &CONFIG.title
+                "```\n{s}\n```# {}\n\n### All tags",
+                &CONFIG.title
             )?,
             None => writeln!(&mut writer, "# {}\n\n### All tags\n", &CONFIG.title)?,
         }

@@ -116,12 +116,7 @@ impl Config {
         match ron::de::from_str(&cfg_file) {
             Ok(s) => Ok(s),
             Err(e) => {
-                eprintln!(
-                    "Error decoding config:\n  code: {:?}\n  position:\n    line: {}\n    column: {}",
-                    e.code,
-                    e.position.line,
-                    e.position.col,
-                );
+                eprintln!("Error decoding config: {e}");
                 Err(e.into())
             }
         }
@@ -129,14 +124,11 @@ impl Config {
 
     /// Save the config to disk
     pub fn save(&self) -> Result<(), crate::Error> {
-        let pcfg = PrettyConfig::new().struct_names(true).decimal_floats(true);
+        let pcfg = PrettyConfig::new().struct_names(true);
         let buf = File::create("Config.ron")?;
         let writer = BufWriter::new(buf);
         if let Err(e) = to_writer_pretty(writer, &self, pcfg) {
-            eprintln!(
-                "Error encoding config:\n  code: {:?}\n  position:\n    line: {}\n    column: {}",
-                e.code, e.position.line, e.position.col,
-            );
+            eprintln!("Error encoding config: {e}");
             return Err(e.into());
         }
         Ok(())

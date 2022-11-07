@@ -4,23 +4,23 @@ use {crate::content, clap::ArgMatches};
 /// # Errors
 /// Errors are bubbled up from the called functions
 pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
-    let title = match matches.value_of("title") {
+    let title = match matches.get_one::<String>("title") {
         Some(t) => t,
         None => return Err(String::from("Missing title").into()),
     };
     match matches.subcommand() {
         Some(("init", init_matches)) => {
-            let tags = match init_matches.values_of("tags") {
+            let tags = match init_matches.get_many::<String>("tags") {
                 Some(t) => t.map(std::string::ToString::to_string).collect::<Vec<_>>(),
                 None => Vec::new(),
             };
             content::Page::create(
                 content::Kind::Post,
                 title,
-                init_matches.value_of("summary"),
+                init_matches.get_one::<String>("summary").map(|x| &**x),
                 tags,
             )?;
-            if init_matches.is_present("edit") {
+            if init_matches.get_flag("edit") {
                 content::Page::edit(content::Kind::Post, title)?;
             }
         }
