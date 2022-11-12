@@ -1,4 +1,8 @@
-use {crate::content, clap::ArgMatches};
+use {
+    crate::content,
+    clap::ArgMatches,
+    gettextrs::gettext,
+};
 
 /// Matches the `post` subcommand cli arguments and runs the appropriate code
 /// # Errors
@@ -6,7 +10,7 @@ use {crate::content, clap::ArgMatches};
 pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     let title = match matches.get_one::<String>("title") {
         Some(t) => t,
-        None => return Err(String::from("Missing title").into()),
+        None => return Err(String::from(gettext("Missing title")).into()),
     };
     match matches.subcommand() {
         Some(("init", init_matches)) => {

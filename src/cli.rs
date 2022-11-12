@@ -157,24 +157,24 @@ that tag."),
 /// The page init subcommand
 pub fn page_init() -> Command {
     Command::new("init")
-        .about("Initializes a new page")
+        .about(gettext("Initializes a new page"))
         .visible_alias("in")
         .visible_short_flag_alias('i')
         .args([
             Arg::new("summary")
-                .help("A short summary of the page (optional)")
+                .help(gettext("A short summary of the page (optional)"))
                 .short('s')
                 .long("summary")
                 .num_args(1)
                 .required(false),
             Arg::new("tags")
-                .help("Tags for this page (optional)")
+                .help(gettext("Tags for this page (optional)"))
                 .short('t')
                 .long("tags")
                 .num_args(1..)
                 .required(false),
             Arg::new("edit")
-                .help("Edit the newly created page")
+                .help(gettext("Edit the newly created page"))
                 .short('e')
                 .long("edit")
                 .action(clap::ArgAction::SetTrue)
@@ -186,25 +186,25 @@ pub fn page_init() -> Command {
 /// The page subcommand
 pub fn page() -> Command {
     Command::new("page")
-        .about("Manage pages")
+        .about(gettext("Manage pages"))
         .long_about(
-            "Pages must be published before they will appear in the generated capsule. Pages
+            gettext("Pages must be published before they will appear in the generated capsule. Pages
 may also be categorized using tags, and a page will be auto generated for every
 tag in the capsule with links to every page and gemlog post which includes that
 tag. The special page \"index.gmi\", which is automatically generated when the
 capsule is first generated, will also display a configurable number of gemlog
 post links wherever the string \"{% posts %}\" is placed within it's content
-section.",
+section.")
         )
         .visible_alias("pg")
         .args([
             Arg::new("title")
-                .help("The title of the page")
+                .help(gettext("The title of the page"))
                 .short('t')
                 .long("title")
                 .num_args(1),
             Arg::new("path")
-                .help("Path to the page")
+                .help(gettext("Path to the page"))
                 .short('p')
                 .long("path")
                 .num_args(1),
@@ -218,10 +218,10 @@ section.",
         .subcommands([
             page_init(),
             Command::new("publish")
-                .about("Marks the page as published")
+                .about(gettext("Marks the page as published"))
                 .visible_alias("pub"),
             Command::new("edit")
-                .about("Opens the page in an editor")
+                .about(gettext("Opens the page in an editor"))
                 .visible_short_flag_alias('e')
                 .visible_alias("ed"),
         ])
@@ -231,7 +231,7 @@ section.",
 /// Generates the command line options
 pub fn zond() -> Command {
     Command::new("zond")
-        .about("A static Gemini capsule generator")
+        .about(gettext("A static Gemini capsule generator"))
         .author("The JeanG3nie <jeang3nie@hitchhiker-linux.org>")
         .color(clap::ColorChoice::Auto)
         .version(env!("CARGO_PKG_VERSION"))

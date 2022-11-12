@@ -8,7 +8,7 @@ use {
     atom_syndication::{self as atom, Feed},
     chrono::{Datelike, Utc},
     clap::ArgMatches,
-    gettextrs::*,
+    gettextrs::gettext,
     std::{
         borrow::Cow,
         collections::{BTreeMap, HashMap},
@@ -137,7 +137,7 @@ impl Capsule {
         let banner = match crate::banner::get() {
             Some(Ok(s)) => Some(s.trim_end().to_string()),
             Some(Err(e)) => {
-                eprintln!("{}", gettext("Error reading banner file"));
+                eprintln!("{}: {e}", gettext("Error reading banner file"));
                 return Err(e.into());
             }
             None => None,
@@ -360,7 +360,8 @@ impl Capsule {
         }
         writeln!(
             &mut writer,
-            "\n=> ../tags {}\n=> .. {}",
+            "\n=> ../{} {}\n=> .. {}",
+            gettext("tags"),
             gettext("tags"),
             gettext("Home"),
         )?;

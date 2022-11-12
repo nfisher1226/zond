@@ -1,3 +1,4 @@
+use gettextrs::gettext;
 use std::{error, fmt, io, num, path, str};
 
 #[derive(Debug)]
@@ -91,11 +92,11 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::IoError(e) => write!(f, "{e}"),
-            Self::FormatError => write!(f, "Format error"),
-            Self::PathPrefixError => write!(f, "Path prefix error"),
-            Self::ParseBoolError => write!(f, "Parse bool error"),
-            Self::ParseIntError => write!(f, "Parse int error"),
-            Self::ParseEnumError => write!(f, "Parse enum error"),
+            Self::FormatError => write!(f, "{}", gettext("Format error")),
+            Self::PathPrefixError => write!(f, "{}", gettext("Path prefix error")),
+            Self::ParseBoolError => write!(f, "{}", gettext("Parse bool error")),
+            Self::ParseIntError => write!(f, "{}", gettext("Parse int error")),
+            Self::ParseEnumError => write!(f, "{}", gettext("Parse enum error")),
             Self::RonError(e) => write!(f, "Ron error: {e}"),
             Self::TimeError(e) => write!(f, "{e}"),
             Self::UrlError(e) => write!(f, "{e}"),

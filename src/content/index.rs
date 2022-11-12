@@ -1,6 +1,6 @@
 use {
     crate::{GetPath, ToDisk},
-    gettextrs::*,
+    gettextrs::gettext,
     std::{
         fs,
         path::{Path, PathBuf},
@@ -31,7 +31,7 @@ impl ToDisk for Index {
         match fs::write(path, &self.0) {
             Ok(_) => Ok(()),
             Err(e) => {
-                eprintln!("{}", gettext("Error writing index to disk"));
+                eprintln!("{}: {e}", gettext("Error writing index to disk"));
                 Err(e.into())
             }
         }

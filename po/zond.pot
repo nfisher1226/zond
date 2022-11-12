@@ -1,0 +1,100 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: zond\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-11-11 23:50+0200\n"
+"Last-Translator: none\n"
+"Language-Team: none\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.2\n"
+
+#: src/lib.rs:39
+msgid "Error loading config"
+msgstr ""
+
+#: src/lib.rs:67
+msgid "Error creating directory in trait `ToDisk` for `atom_syndication::Feed`"
+msgstr ""
+
+#: src/lib.rs:80
+msgid "Error creating file in trait `ToDisk` for `atom_syndication::Feed`"
+msgstr ""
+
+#: src/lib.rs:95
+msgid "Error writing to file in trait `ToDisk` for `atom_syndication::Feed`"
+msgstr ""
+
+#: src/lib.rs:122
+msgid "All content for this site is released under the"
+msgstr ""
+
+#: src/lib.rs:123
+msgid "license"
+msgstr ""
+
+#: src/content/index.rs:34
+msgid "Error writing index to disk"
+msgstr ""
+
+#: src/command/build.rs:109
+msgid "by"
+msgstr ""
+
+#: src/command/build.rs:140
+msgid "Error reading banner file"
+msgstr ""
+
+#: src/command/build.rs:204
+msgid "tags"
+msgstr ""
+
+#: src/command/build.rs:220
+msgid "All tags"
+msgstr ""
+
+#: src/command/build.rs:241
+msgid "Pages tagged"
+msgstr ""
+
+#: src/command/build.rs:264
+msgid "Home"
+msgstr ""
+
+#: src/command/build.rs:292
+msgid "Gemlog posts"
+msgstr ""
+
+#: src/command/build.rs:304
+msgid "All posts"
+msgstr ""
+
+#: src/command/post.rs:13
+msgid "Missing title"
+msgstr ""
+
+#: src/command/init.rs:29
+msgid "Invalid email address"
+msgstr ""
+
+#: src/command/init.rs:36
+msgid "Invalid url"
+msgstr ""
+
+#: src/command/init.rs:49
+msgid "Error parsing number for entry display"
+msgstr ""
+
+#: src/command/init.rs:62
+msgid "Invalid string"
+msgstr ""
+
+#: src/command/init.rs:72
+msgid "Error parsing input"
+msgstr ""
+
+#: src/command/init.rs:84
+msgid "Error creating gemlog content directory"
+msgstr ""

@@ -10,7 +10,7 @@ use {
     crate::{config::DisplayDate, ToDisk, CONFIG},
     atom_syndication as atom,
     extract_frontmatter::{config::Splitter, Extractor},
-    gettextrs::*,
+    gettextrs::gettext,
     ron::ser::{to_string_pretty, PrettyConfig},
     serde::{Deserialize, Serialize},
     std::{
