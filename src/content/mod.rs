@@ -10,6 +10,7 @@ use {
     crate::{config::DisplayDate, ToDisk, CONFIG},
     atom_syndication as atom,
     extract_frontmatter::{config::Splitter, Extractor},
+    gettextrs::*,
     ron::ser::{to_string_pretty, PrettyConfig},
     serde::{Deserialize, Serialize},
     std::{
@@ -224,7 +225,7 @@ impl Page {
             _ => writeln!(&mut writer, "{}\n", self.content)?,
         }
         if !self.meta.tags.is_empty() {
-            writeln!(&mut writer, "### Tags for this page")?;
+            writeln!(&mut writer, "### {}", gettext("Tags for this page"))?;
             let u = CONFIG.url()?;
             for tag in &self.meta.tags {
                 match depth {
@@ -238,18 +239,19 @@ impl Page {
         }
         writeln!(
             &mut writer,
-            "=> {} Home",
+            "=> {} {}",
             match depth {
                 1 => Cow::from("."),
                 2 => Cow::from(".."),
                 _ => Cow::from(CONFIG.url()?.to_string()),
-            }
+            },
+            gettext("Home"),
         )?;
         if let Some(p) = path.parent() {
             if let Some(n) = p.file_name() {
                 if let Some(s) = n.to_str() {
                     if s == "gemlog" {
-                        writeln!(&mut writer, "=> . All posts")?;
+                        writeln!(&mut writer, "=> . {}", gettext("All posts"))?;
                     }
                 }
             }

@@ -3,6 +3,7 @@
 use {
     atom_syndication::Feed,
     config::Config,
+    gettextrs::*,
     once_cell::sync::Lazy,
     std::{
         fs::{self, File},
@@ -35,7 +36,7 @@ pub use error::Error;
 static CONFIG: Lazy<Config> = Lazy::new(|| match Config::load() {
     Ok(c) => c,
     Err(e) => {
-        eprintln!("Error loading config: {e}");
+        eprintln!("{}: {e}", gettext("Error loading config"));
         process::exit(1);
     }
 });
@@ -62,8 +63,8 @@ impl ToDisk for Feed {
         if let Some(p) = path.parent() {
             if !p.exists() {
                 if let Err(e) = fs::create_dir_all(p) {
-                    eprintln!(
-                        "Error creating directory in trait `ToDisk` for `atom_syndication::Feed`"
+                    eprintln!("{}",
+                        gettext("Error creating directory in trait `ToDisk` for `atom_syndication::Feed`")
                     );
                     return Err(e.into());
                 }
@@ -75,7 +76,9 @@ impl ToDisk for Feed {
         let mut outfd = match File::create(path) {
             Ok(o) => o,
             Err(e) => {
-                eprintln!("Error creating file in trait `ToDisk` for `atom_syndication::Feed`");
+                eprintln!("{}",
+                    gettext("Error creating file in trait `ToDisk` for `atom_syndication::Feed`")
+                );
                 return Err(e.into());
             }
         };
@@ -88,7 +91,9 @@ impl ToDisk for Feed {
             }
         });
         if let Err(e) = outfd.write_all(b"\n") {
-            eprintln!("Error writing to file in trait `ToDisk` for `atom_syndication::Feed`");
+            eprintln!("{}",
+                gettext("Error writing to file in trait `ToDisk` for `atom_syndication::Feed`")
+            );
             return Err(e.into());
         }
         Ok(())
@@ -113,7 +118,9 @@ pub fn write_footer(writer: &mut BufWriter<File>, year: i32) -> Result<(), crate
     if let Some(license) = &CONFIG.license {
         writeln!(
             writer,
-            "All content for this site is released under the {license} license."
+            "{} {license} {}.",
+            gettext("All content for this site is released under the"),
+            gettext("license")
         )?;
     }
     writeln!(writer, "© {year} by {}", CONFIG.author.name,)?;
@@ -122,7 +129,7 @@ pub fn write_footer(writer: &mut BufWriter<File>, year: i32) -> Result<(), crate
     }
     if CONFIG.show_email {
         if let Some(ref email) = CONFIG.author.email {
-            writeln!(writer, "=> mailto:{email} Contact")?;
+            writeln!(writer, "=> mailto:{email} {}", gettext("Contact"))?;
         }
     }
     Ok(())

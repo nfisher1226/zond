@@ -1,10 +1,13 @@
-use clap::{Arg, ArgGroup, Command};
+use {
+    clap::{Arg, ArgGroup, Command},
+    gettextrs::*,
+};
 
 #[must_use]
 /// The init subcommand
 pub fn init() -> Command {
     Command::new("init")
-        .about("Initialize a new capsule")
+        .about(gettext("Initialize a new capsule"))
         .visible_alias("in")
         .visible_short_flag_alias('i')
         .args([
@@ -17,61 +20,61 @@ pub fn init() -> Command {
              Arg::new("author")
                 .short('a')
                 .long("author")
-                .help("The principle author of this capsule")
+                .help(gettext("The principle author of this capsule"))
                 .num_args(1)
                 .required(false),
              Arg::new("email")
                 .short('m')
                 .long("email")
-                .help("The email address of the principle author")
+                .help(gettext("The email address of the principle author"))
                 .num_args(1)
                 .required(false),
              Arg::new("url")
                 .short('u')
                 .long("url")
-                .help("The principle author's homepage")
+                .help(gettext("The principle author's homepage"))
                 .num_args(1)
                 .required(false),
              Arg::new("domain")
                 .short('d')
                 .long("domain")
-                .help("The domain serving this capsule")
+                .help(gettext("The domain serving this capsule"))
                 .num_args(1)
                 .required(false),
              Arg::new("path")
                 .short('p')
                 .long("path")
-                .help("The path from the server root to this capsule")
+                .help(gettext("The path from the server root to this capsule"))
                 .num_args(1)
                 .required(false),
              Arg::new("entries")
                 .short('e')
                 .long("entries")
-                .help("Number of gemlog entries to display links for on the homepage")
+                .help(gettext("Number of gemlog entries to display links for on the homepage"))
                 .num_args(1)
                 .required(false),
             Arg::new("display_date")
                 .short('D')
                 .long("display_date")
-                .help("Which pages to display the publication date under the title (always|gemlog|never)")
+                .help(gettext("Which pages to display the publication date under the title (always|gemlog|never)"))
                 .num_args(1)
                 .required(false),
              Arg::new("feed")
                 .short('f')
                 .long("feed")
-                .help("The type of feed to generate. Atom, Gemini, of Both")
+                .help(gettext("The type of feed to generate. Atom, Gemini, of Both"))
                 .num_args(1)
                 .required(false),
              Arg::new("license")
                 .short('l')
                 .long("license")
-                .help("Commons license to use. One of CcBy, CcBySa, CcByNc, CcByNcSa, CcByNd, CcByNcNd. For information on Creative Commons licenses, see https://creativecommons.org/about/cclicenses/")
+                .help(gettext("Commons license to use. One of CcBy, CcBySa, CcByNc, CcByNcSa, CcByNd, CcByNcNd. For information on Creative Commons licenses, see https://creativecommons.org/about/cclicenses/"))
                 .num_args(1)
                 .required(false),
              Arg::new("show_email")
                 .short('s')
                 .long("show_email")
-                .help("Add a link to the author's email on each page")
+                .help(gettext("Add a link to the author's email on each page"))
                 .action(clap::ArgAction::SetTrue)
                 .required(false),
              ])
@@ -81,14 +84,14 @@ pub fn init() -> Command {
 /// The build subcommand
 pub fn build() -> Command {
     Command::new("build")
-        .about("Build the capsule")
+        .about(gettext("Build the capsule"))
         .visible_alias("bld")
         .visible_short_flag_alias('b')
         .arg(
             Arg::new("output")
                 .short('o')
                 .long("output")
-                .help("The location to output the generated capsule")
+                .help(gettext("The location to output the generated capsule"))
                 .num_args(1)
                 .required(false),
         )
@@ -98,24 +101,24 @@ pub fn build() -> Command {
 /// The post init subcommand
 pub fn post_init() -> Command {
     Command::new("init")
-        .about("Initializes a new post")
+        .about(gettext("Initializes a new post"))
         .visible_alias("in")
         .visible_short_flag_alias('i')
         .args([
             Arg::new("summary")
-                .help("A short summary of the post (optional)")
+                .help(gettext("A short summary of the post (optional)"))
                 .short('s')
                 .long("summary")
                 .num_args(1)
                 .required(false),
             Arg::new("tags")
-                .help("Tags for this post (optional)")
+                .help(gettext("Tags for this post (optional)"))
                 .short('t')
                 .long("tags")
                 .num_args(1)
                 .required(false),
             Arg::new("edit")
-                .help("Edit the newly created post")
+                .help(gettext("Edit the newly created post"))
                 .short('e')
                 .long("edit")
                 .action(clap::ArgAction::SetTrue)
@@ -127,24 +130,24 @@ pub fn post_init() -> Command {
 /// the post subcommand
 pub fn post() -> Command {
     Command::new("post")
-        .about("Manage gemlog posts")
+        .about(gettext("Manage gemlog posts"))
         .long_about(
-            "A post is just a page residing in the \"gemlog\" subdirectory, which gets indexed
+            gettext("A post is just a page residing in the \"gemlog\" subdirectory, which gets indexed
 and included in feeds. Posts must be published before they will appear in the
 generated capsule, and will appear in reverse chronoogical order. Posts, like all
 pages, may also be categorized using tags, and a page will be auto generated for
 every tag in the capsule with links to every page and gemlog post which includes
-that tag.",
+that tag."),
         )
         .visible_alias("po")
-        .arg(Arg::new("title").help("The title of the post").num_args(1))
+        .arg(Arg::new("title").help(gettext("The title of the post")).num_args(1))
         .subcommands([
             post_init(),
             Command::new("publish")
-                .about("Marks the post as published")
+                .about(gettext("Marks the post as published"))
                 .visible_alias("pub"),
             Command::new("edit")
-                .about("Opens the post in an editor")
+                .about(gettext("Opens the post in an editor"))
                 .visible_alias("ed")
                 .visible_short_flag_alias('e'),
         ])
