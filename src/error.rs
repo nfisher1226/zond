@@ -98,9 +98,11 @@ impl fmt::Display for Error {
             Self::ParseIntError => write!(f, "{}", gettext("Parse int error")),
             Self::ParseEnumError => write!(f, "{}", gettext("Parse enum error")),
             Self::RonError(e) => write!(f, "Ron error: {e}"),
-            Self::TimeError(e) => write!(f, "{e}"),
-            Self::UrlError(e) => write!(f, "{e}"),
-            Self::EditorError(e) | Self::OtherError(e) => write!(f, "{e}"),
+            Self::TimeError(e) => write!(f, "{}: {e}", gettext("Time error")),
+            Self::UrlError(e) => write!(f, "{}: {e}", gettext("Url error")),
+            Self::EditorError(e) | Self::OtherError(e) => {
+                write!(f, "{}: {e}", gettext("Editor error"))
+            }
         }
     }
 }

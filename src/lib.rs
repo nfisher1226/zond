@@ -3,7 +3,7 @@
 use {
     atom_syndication::Feed,
     config::Config,
-    gettextrs::*,
+    gettextrs::gettext,
     once_cell::sync::Lazy,
     std::{
         fs::{self, File},
@@ -76,7 +76,8 @@ impl ToDisk for Feed {
         let mut outfd = match File::create(path) {
             Ok(o) => o,
             Err(e) => {
-                eprintln!("{}",
+                eprintln!(
+                    "{}",
                     gettext("Error creating file in trait `ToDisk` for `atom_syndication::Feed`")
                 );
                 return Err(e.into());
@@ -91,7 +92,8 @@ impl ToDisk for Feed {
             }
         });
         if let Err(e) = outfd.write_all(b"\n") {
-            eprintln!("{}",
+            eprintln!(
+                "{}",
                 gettext("Error writing to file in trait `ToDisk` for `atom_syndication::Feed`")
             );
             return Err(e.into());

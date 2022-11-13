@@ -1,8 +1,4 @@
-use {
-    crate::content,
-    clap::ArgMatches,
-    gettextrs::gettext,
-};
+use {crate::content, clap::ArgMatches, gettextrs::gettext};
 
 /// Matches the `post` subcommand cli arguments and runs the appropriate code
 /// # Errors

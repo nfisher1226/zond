@@ -61,7 +61,7 @@ impl TryFrom<&Meta> for Categories {
                 Some(p) => PathBuf::from(&p),
                 None => PathBuf::from("/"),
             };
-            path.push(&PathBuf::from("tags"));
+            path.push(&PathBuf::from(gettext("tags")));
             path.push(&PathBuf::from(&tag));
             path.set_extension("gmi");
             let path = path.to_string_lossy();
@@ -229,10 +229,10 @@ impl Page {
             let u = CONFIG.url()?;
             for tag in &self.meta.tags {
                 match depth {
-                    1 => writeln!(&mut writer, "=> tags/{tag}.gmi {tag}")?,
-                    2 => writeln!(&mut writer, "=> ../tags/{tag}.gmi {tag}")?,
-                    3 => writeln!(&mut writer, "=> ../../tags/{tag}.gmi {tag}")?,
-                    _ => writeln!(&mut writer, "=> {u}/tags/{tag}.gmi {tag}")?,
+                    1 => writeln!(&mut writer, "=> {}/{tag}.gmi {tag}", gettext("tags"))?,
+                    2 => writeln!(&mut writer, "=> ../{}/{tag}.gmi {tag}", gettext("tags"))?,
+                    3 => writeln!(&mut writer, "=> ../../{}/{tag}.gmi {tag}", gettext("tags"))?,
+                    _ => writeln!(&mut writer, "=> {u}/{}/{tag}.gmi {tag}", gettext("tags"))?,
                 }
             }
             writeln!(&mut writer)?;

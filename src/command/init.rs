@@ -81,7 +81,10 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     gemlog.push("gemlog");
     if !gemlog.exists() {
         if let Err(e) = std::fs::create_dir_all(&gemlog) {
-            eprintln!("{}: {e}", gettext("Error creating gemlog content directory"));
+            eprintln!(
+                "{}: {e}",
+                gettext("Error creating gemlog content directory")
+            );
             return Err(e.into());
         }
     }

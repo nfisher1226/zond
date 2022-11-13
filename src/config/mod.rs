@@ -110,7 +110,7 @@ impl Config {
         let cfg_file = match fs::read_to_string(cfg_file) {
             Ok(s) => s,
             Err(e) => {
-                eprintln!("{}: {e}",gettext("Error reading config file"));
+                eprintln!("{}: {e}", gettext("Error reading config file"));
                 return Err(e.into());
             }
         };

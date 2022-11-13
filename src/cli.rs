@@ -56,13 +56,18 @@ pub fn init() -> Command {
             Arg::new("display_date")
                 .short('D')
                 .long("display_date")
-                .help(gettext("Which pages to display the publication date under the title (always|gemlog|never)"))
+                .help(
+                    &format!(
+                        "{} (always|gemlog|never)",
+                        gettext("Which pages to display the publication date under the title")
+                    )
+                )
                 .num_args(1)
                 .required(false),
              Arg::new("feed")
                 .short('f')
                 .long("feed")
-                .help(gettext("The type of feed to generate. Atom, Gemini, of Both"))
+                .help(gettext("The type of feed to generate. Atom, Gemini, or Both"))
                 .num_args(1)
                 .required(false),
              Arg::new("license")
@@ -131,16 +136,20 @@ pub fn post_init() -> Command {
 pub fn post() -> Command {
     Command::new("post")
         .about(gettext("Manage gemlog posts"))
-        .long_about(
-            gettext("A post is just a page residing in the \"gemlog\" subdirectory, which gets indexed
+        .long_about(gettext(
+            "A post is just a page residing in the \"gemlog\" subdirectory, which gets indexed
 and included in feeds. Posts must be published before they will appear in the
 generated capsule, and will appear in reverse chronoogical order. Posts, like all
 pages, may also be categorized using tags, and a page will be auto generated for
 every tag in the capsule with links to every page and gemlog post which includes
-that tag."),
-        )
+that tag.",
+        ))
         .visible_alias("po")
-        .arg(Arg::new("title").help(gettext("The title of the post")).num_args(1))
+        .arg(
+            Arg::new("title")
+                .help(gettext("The title of the post"))
+                .num_args(1),
+        )
         .subcommands([
             post_init(),
             Command::new("publish")
@@ -187,15 +196,15 @@ pub fn page_init() -> Command {
 pub fn page() -> Command {
     Command::new("page")
         .about(gettext("Manage pages"))
-        .long_about(
-            gettext("Pages must be published before they will appear in the generated capsule. Pages
+        .long_about(gettext(
+            "Pages must be published before they will appear in the generated capsule. Pages
 may also be categorized using tags, and a page will be auto generated for every
 tag in the capsule with links to every page and gemlog post which includes that
 tag. The special page \"index.gmi\", which is automatically generated when the
 capsule is first generated, will also display a configurable number of gemlog
 post links wherever the string \"{% posts %}\" is placed within it's content
-section.")
-        )
+section.",
+        ))
         .visible_alias("pg")
         .args([
             Arg::new("title")
