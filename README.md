@@ -15,8 +15,11 @@ generator like Hugo or Jekyll but for [Project Gemini](https://gemini.circumluna
 ```sh
 cargo build --release
 ```
-If desired, a release distribution can then be generated which includes Unix man
-pages and shell completions for bash, fish, powershell and zsh.
+If desired, a release distribution can then be generated which includes the following:
+- Shell completions for bash, fish, powershell and zsh
+- Unix man pages
+- Documentation
+- Translations
 ```sh
 cargo xtask dist
 ```
