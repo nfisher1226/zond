@@ -30,12 +30,12 @@ msgid "Error writing to file in trait `ToDisk` for `atom_syndication::Feed`"
 msgstr ""
 
 #: src/lib.rs:122
-msgid "All content for this site is released under the"
+msgid "All content for this site is licensed as"
 msgstr "Tutto il contenuto di questa capsula è diffuso sotto la licenza"
 
-#: src/lib.rs:123
-msgid "license"
-msgstr ""
+#: src/lib.rs:134
+msgid "Contact"
+msgstr "Contattami"
 
 #: src/content/index.rs:34
 msgid "Error writing index to disk"
@@ -72,6 +72,14 @@ msgstr "Aggiornamenti gemlog"
 #: src/command/build.rs:304
 msgid "All posts"
 msgstr "Tutti gli aggiornamenti"
+
+#: src/command/build.rs:346
+msgid "Atom Feed"
+msgstr "Feed Atom"
+
+#: src/command/build.rs:349
+msgid "Gemini Feed"
+msgstr "Feed Gemini"
 
 #: src/command/post.rs:13
 msgid "Missing title"

@@ -6,7 +6,7 @@ use {crate::content, clap::ArgMatches, gettextrs::gettext};
 pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     let title = match matches.get_one::<String>("title") {
         Some(t) => t,
-        None => return Err(String::from(gettext("Missing title")).into()),
+        None => return Err(gettext("Missing title").into()),
     };
     match matches.subcommand() {
         Some(("init", init_matches)) => {

@@ -120,12 +120,11 @@ pub fn write_footer(writer: &mut BufWriter<File>, year: i32) -> Result<(), crate
     if let Some(license) = &CONFIG.license {
         writeln!(
             writer,
-            "{} {license} {}.",
-            gettext("All content for this site is released under the"),
-            gettext("license")
+            "{} {license}.",
+            gettext("All content for this site is licensed as")
         )?;
     }
-    writeln!(writer, "© {year} by {}", CONFIG.author.name,)?;
+    writeln!(writer, "© {year} {} {}", gettext("by"), CONFIG.author.name,)?;
     for link in &CONFIG.footer_links {
         writeln!(writer, "{link}")?;
     }

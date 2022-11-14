@@ -35,6 +35,10 @@ msgstr ""
 msgid "license"
 msgstr ""
 
+#: src/lib.rs:134
+msgid "Contact"
+msgstr ""
+
 #: src/content/index.rs:34
 msgid "Error writing index to disk"
 msgstr ""
@@ -69,6 +73,14 @@ msgstr ""
 
 #: src/command/build.rs:304
 msgid "All posts"
+msgstr ""
+
+#: src/command/build.rs:346
+msgid "Atom Feed"
+msgstr ""
+
+#: src/command/build.rs:349
+msgid "Gemini Feed"
 msgstr ""
 
 #: src/command/post.rs:13

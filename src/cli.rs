@@ -1,6 +1,6 @@
 use {
     clap::{Arg, ArgGroup, Command},
-    gettextrs::*,
+    gettextrs::gettext,
 };
 
 #[must_use]
@@ -57,7 +57,7 @@ pub fn init() -> Command {
                 .short('D')
                 .long("display_date")
                 .help(
-                    &format!(
+                    format!(
                         "{} (always|gemlog|never)",
                         gettext("Which pages to display the publication date under the title")
                     )
