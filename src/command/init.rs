@@ -39,14 +39,8 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
         cfg.domain = domain.to_string();
     }
     cfg.path = matches.get_one::<String>("path").map(ToString::to_string);
-    if let Some(e) = matches.get_one::<String>("entries") {
-        cfg.entries = match e.parse() {
-            Ok(n) => n,
-            Err(e) => {
-                eprintln!("Error parsing number for entry display: invalid string");
-                return Err(e.into());
-            }
-        };
+    if let Some(e) = matches.get_one::<usize>("entries") {
+        cfg.entries = *e;
     }
     if let Some(d) = matches.get_one::<String>("display_email") {
         cfg.display_date = d.parse()?;

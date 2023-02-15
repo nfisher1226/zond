@@ -1,4 +1,4 @@
-use clap::{Arg, ArgGroup, Command};
+use clap::{Arg, ArgGroup, Command, ValueHint, value_parser};
 
 #[must_use]
 /// The init subcommand
@@ -24,18 +24,21 @@ pub fn init() -> Command {
                 .short('m')
                 .long("email")
                 .help("The email address of the principle author")
+                .value_hint(ValueHint::EmailAddress)
                 .num_args(1)
                 .required(false),
              Arg::new("url")
                 .short('u')
                 .long("url")
                 .help("The principle author's homepage")
+                .value_hint(ValueHint::Url)
                 .num_args(1)
                 .required(false),
              Arg::new("domain")
                 .short('d')
                 .long("domain")
                 .help("The domain serving this capsule")
+                .value_hint(ValueHint::Hostname)
                 .num_args(1)
                 .required(false),
              Arg::new("path")
@@ -48,24 +51,29 @@ pub fn init() -> Command {
                 .short('e')
                 .long("entries")
                 .help("Number of gemlog entries to display links for on the homepage")
+                .value_parser(value_parser!(usize))
+                .default_value("3")
                 .num_args(1)
                 .required(false),
             Arg::new("display_date")
                 .short('D')
                 .long("display_date")
-                .help("Which pages to display the publication date under the title (always|gemlog|never)")
+                .help("Which pages to display the publication date under the title")
                 .num_args(1)
+                .value_parser(["always", "gemlog", "never"])
                 .required(false),
              Arg::new("feed")
                 .short('f')
                 .long("feed")
-                .help("The type of feed to generate. Atom, Gemini, of Both")
+                .help("The type of feed to generate.")
+                .value_parser(["atom", "gemini", "both"])
                 .num_args(1)
                 .required(false),
              Arg::new("license")
                 .short('l')
                 .long("license")
-                .help("Commons license to use. One of CcBy, CcBySa, CcByNc, CcByNcSa, CcByNd, CcByNcNd. For information on Creative Commons licenses, see https://creativecommons.org/about/cclicenses/")
+                .help("Commons license to use. For information on Creative Commons licenses, see https://creativecommons.org/about/cclicenses/")
+                .value_parser(["CcBy", "CcBySa", "CcByNc", "CcByNd", "CcByNcNd"])
                 .num_args(1)
                 .required(false),
              Arg::new("show_email")
@@ -112,7 +120,8 @@ pub fn post_init() -> Command {
                 .help("Tags for this post (optional)")
                 .short('t')
                 .long("tags")
-                .num_args(1)
+                .num_args(1..)
+                .value_delimiter(',')
                 .required(false),
             Arg::new("edit")
                 .help("Edit the newly created post")
@@ -169,6 +178,7 @@ pub fn page_init() -> Command {
                 .short('t')
                 .long("tags")
                 .num_args(1..)
+                .value_delimiter(',')
                 .required(false),
             Arg::new("edit")
                 .help("Edit the newly created page")
@@ -230,7 +240,6 @@ pub fn zond() -> Command {
     Command::new("zond")
         .about("A static Gemini capsule generator")
         .author("The JeanG3nie <jeang3nie@hitchhiker-linux.org>")
-        .color(clap::ColorChoice::Auto)
         .version(env!("CARGO_PKG_VERSION"))
         .subcommand_required(true)
         .arg_required_else_help(true)
