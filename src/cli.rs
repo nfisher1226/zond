@@ -1,4 +1,4 @@
-use clap::{Arg, ArgGroup, Command, ValueHint, value_parser};
+use clap::{Arg, ArgAction, ArgGroup, Command, ValueHint, value_parser};
 
 #[must_use]
 /// The init subcommand
@@ -80,7 +80,7 @@ pub fn init() -> Command {
                 .short('s')
                 .long("show_email")
                 .help("Add a link to the author's email on each page")
-                .action(clap::ArgAction::SetTrue)
+                .action(ArgAction::SetTrue)
                 .required(false),
              ])
 }
@@ -127,7 +127,13 @@ pub fn post_init() -> Command {
                 .help("Edit the newly created post")
                 .short('e')
                 .long("edit")
-                .action(clap::ArgAction::SetTrue)
+                .action(ArgAction::SetTrue)
+                .required(false),
+            Arg::new("publish")
+                .help("Publish the newly created post after editing. Implies `-e`")
+                .short('p')
+                .long("publish")
+                .action(ArgAction::SetTrue)
                 .required(false),
         ])
 }
@@ -184,7 +190,13 @@ pub fn page_init() -> Command {
                 .help("Edit the newly created page")
                 .short('e')
                 .long("edit")
-                .action(clap::ArgAction::SetTrue)
+                .action(ArgAction::SetTrue)
+                .required(false),
+            Arg::new("publish")
+                .help("Publish the newly created page after editing. Implies `-e`")
+                .short('p')
+                .long("publish")
+                .action(ArgAction::SetTrue)
                 .required(false),
         ])
 }

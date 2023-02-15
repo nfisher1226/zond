@@ -23,8 +23,11 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
                 init_matches.get_one::<String>("summary").map(|x| &**x),
                 tags,
             )?;
-            if init_matches.get_flag("edit") {
+            if init_matches.get_flag("edit") || init_matches.get_flag("publish") {
                 Page::edit(Kind::Post, title)?;
+            }
+            if init_matches.get_flag("publish") {
+                Page::publish(Kind::Post, title)?;
             }
         }
         Some(("publish", _publish_matches)) => {
