@@ -5,7 +5,7 @@ use {
         ToDisk,
     },
     clap::ArgMatches,
-    std::path::PathBuf,
+    std::{fs, path::PathBuf, string::ToString},
     url::Url,
 };
 
@@ -38,9 +38,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     if let Some(domain) = matches.get_one::<String>("domain") {
         cfg.domain = domain.to_string();
     }
-    cfg.path = matches
-        .get_one::<String>("path")
-        .map(std::string::ToString::to_string);
+    cfg.path = matches.get_one::<String>("path").map(ToString::to_string);
     if let Some(e) = matches.get_one::<String>("entries") {
         cfg.entries = match e.parse() {
             Ok(n) => n,
@@ -79,7 +77,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     let mut gemlog = PathBuf::from("content");
     gemlog.push("gemlog");
     if !gemlog.exists() {
-        if let Err(e) = std::fs::create_dir_all(&gemlog) {
+        if let Err(e) = fs::create_dir_all(&gemlog) {
             eprintln!("Error creating gemlog content directory");
             return Err(e.into());
         }

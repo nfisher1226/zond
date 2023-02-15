@@ -10,13 +10,17 @@ use {
     crate::{config::DisplayDate, ToDisk, CONFIG},
     atom_syndication as atom,
     extract_frontmatter::{config::Splitter, Extractor},
-    ron::ser::{to_string_pretty, PrettyConfig},
+    ron::{
+        de,
+        ser::{to_string_pretty, PrettyConfig},
+    },
     serde::{Deserialize, Serialize},
     std::{
         borrow::Cow,
         fs::{self, File},
         io::{BufWriter, Write},
         path::{Path, PathBuf},
+        string::ToString,
     },
     url::Url,
 };
@@ -125,7 +129,7 @@ impl Page {
                 let (fm, doc) = Extractor::new(Splitter::DelimiterLine("---")).extract(&f);
                 let fm = fm.trim().to_string();
                 let content = doc.trim().to_string();
-                match ron::de::from_str(&fm) {
+                match de::from_str(&fm) {
                     Ok(meta) => Some(Self { meta, content }),
                     Err(_) => None,
                 }
@@ -141,7 +145,11 @@ impl Page {
         summary: Option<&str>,
         tags: Vec<String>,
     ) -> Result<PathBuf, crate::Error> {
-        let mut tpath = title.trim().to_lowercase().replace(' ', "_");
+        let mut tpath = title
+            .trim()
+            .to_lowercase()
+            .replace("re: ", "re_")
+            .replace(' ', "_");
         tpath.push_str(".gmi");
         let file = match kind {
             Kind::Page(Some(path)) => path,
@@ -163,7 +171,7 @@ impl Page {
         }
         let meta = Meta {
             title: title.to_string(),
-            summary: summary.map(std::string::ToString::to_string),
+            summary: summary.map(ToString::to_string),
             published: None,
             tags,
         };

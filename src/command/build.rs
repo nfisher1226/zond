@@ -10,7 +10,9 @@ use {
     clap::ArgMatches,
     std::{
         borrow::Cow,
+        cmp,
         collections::{BTreeMap, HashMap},
+        env,
         fmt::Write,
         fs::{self, File},
         io::{BufWriter, Write as IoWrite},
@@ -38,11 +40,11 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
         output.push(path);
     }
     if !output.exists() {
-        std::fs::create_dir_all(&output)?;
+        fs::create_dir_all(&output)?;
     }
     let output = std::fs::canonicalize(&output)?;
     if output.exists() {
-        std::fs::remove_dir_all(&output)?;
+        fs::remove_dir_all(&output)?;
     }
     let capsule = Capsule::init(&output)?;
     match CONFIG.feed {
@@ -121,10 +123,10 @@ impl Capsule {
     fn init(output: &Path) -> Result<Self, crate::Error> {
         let mut posts: Posts = BTreeMap::new();
         let mut tags: Tags = HashMap::new();
-        let mut current = std::env::current_dir()?;
+        let mut current = env::current_dir()?;
         current.push("content");
         if !current.exists() {
-            std::fs::create_dir_all(&current)?;
+            fs::create_dir_all(&current)?;
         }
         let current = std::fs::canonicalize(&current)?;
         let mut index = current.clone();
@@ -142,7 +144,7 @@ impl Capsule {
         };
         for entry in WalkDir::new("content").into_iter().flatten() {
             let path = PathBuf::from(entry.path());
-            let path = std::fs::canonicalize(path)?;
+            let path = fs::canonicalize(path)?;
             let last = path.strip_prefix(&current)?;
             if let Some(n) = last.to_str() {
                 if n == "index.gmi" || n == "gemlog/index.gmi" {
@@ -153,7 +155,7 @@ impl Capsule {
             output.push(last);
             if let Some(parent) = output.parent() {
                 if !parent.exists() {
-                    std::fs::create_dir_all(parent)?;
+                    fs::create_dir_all(parent)?;
                 }
             }
             if let Some(s) = path.extension() {
@@ -184,10 +186,10 @@ impl Capsule {
                         }
                     }
                 } else if entry.file_type().is_file() {
-                    std::fs::copy(&path, &output)?;
+                    fs::copy(&path, &output)?;
                 }
             } else if entry.file_type().is_file() {
-                std::fs::copy(&path, &output)?;
+                fs::copy(&path, &output)?;
             }
         }
         Ok(Self {
@@ -245,11 +247,11 @@ impl Capsule {
                 writeln!(&mut tagwriter, "=> {url} {}", link.display)?;
             }
             writeln!(&mut tagwriter, "=> . All tags\n=> .. Home")?;
-            let year = Utc::now().date().year();
+            let year = Utc::now().date_naive().year();
             crate::write_footer(&mut tagwriter, year)?;
         }
         writeln!(&mut writer, "\n=> .. Home")?;
-        let year = Utc::now().date().year();
+        let year = Utc::now().date_naive().year();
         crate::write_footer(&mut writer, year)?;
         Ok(())
     }
@@ -272,7 +274,7 @@ impl Capsule {
             None => writeln!(&mut writer, "# {}\n", &CONFIG.title)?,
         }
         let mut posts = String::from("### Gemlog posts\n");
-        let num = std::cmp::min(CONFIG.entries, self.posts.len());
+        let num = cmp::min(CONFIG.entries, self.posts.len());
         let base = CONFIG.url()?;
         for post in self.posts.values().rev().take(num) {
             let url = Url::parse(&post.link.url)?;
@@ -286,7 +288,7 @@ impl Capsule {
         posts.push_str("=> gemlog/ All posts\n");
         let content = page.content.replace("{% posts %}", &posts);
         writeln!(&mut writer, "{content}")?;
-        let year = Utc::now().date().year();
+        let year = Utc::now().date_naive().year();
         crate::write_footer(&mut writer, year)?;
         Ok(())
     }
@@ -334,7 +336,7 @@ impl Capsule {
             None => {}
         }
         writeln!(&mut writer, "\n=> ../tags tags\n=> .. Home")?;
-        let year = Utc::now().date().year();
+        let year = Utc::now().date_naive().year();
         crate::write_footer(&mut writer, year)?;
         Ok(())
     }

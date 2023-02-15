@@ -30,9 +30,9 @@ impl Time {
     pub fn now() -> Self {
         let utc = Utc::now();
         Self {
-            year: utc.date().year(),
-            month: utc.date().month(),
-            day: utc.date().day(),
+            year: utc.date_naive().year(),
+            month: utc.date_naive().month(),
+            day: utc.date_naive().day(),
             hour: utc.time().hour(),
             minute: utc.time().minute(),
             second: utc.time().second(),

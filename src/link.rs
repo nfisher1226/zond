@@ -1,7 +1,7 @@
 use {
     crate::{content::Meta, CONFIG},
     serde::{Deserialize, Serialize},
-    std::{fmt, path::Path},
+    std::{env, fmt, path::Path},
 };
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -23,7 +23,7 @@ impl Link {
     /// returns a `Link` struct
     pub fn get(origin: &Path, meta: &Meta) -> Result<Self, crate::Error> {
         let mut url = CONFIG.url()?;
-        let mut current = std::env::current_dir()?;
+        let mut current = env::current_dir()?;
         current.push("content");
         let path = origin.strip_prefix(current)?;
         url.set_path(&path.to_string_lossy());
