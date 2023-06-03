@@ -6,6 +6,8 @@ pub mod init;
 pub mod page;
 /// Gemlog post operations
 pub mod post;
+/// Tinylog ops
+pub mod tinylog;
 
 use clap::ArgMatches;
 
@@ -18,6 +20,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
         Some(("page", page_matches)) => page::run(page_matches)?,
         Some(("post", post_matches)) => post::run(post_matches)?,
         Some(("build", build_matches)) => build::run(build_matches)?,
+        Some(("tinylog", tl_matches)) => tinylog::run(tl_matches)?,
         _ => {}
     }
     Ok(())

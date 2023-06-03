@@ -10,10 +10,14 @@ use {
 
 fn docs(outdir: &str) -> Result<(), std::io::Error> {
     println!("Installing documentation:");
-    let docs = ["build.md", "customizing.md", "index.md", "page.md", "post.md"];
-    let outdir: PathBuf = [outdir, "share", "doc", "zond"]
-        .iter()
-        .collect();
+    let docs = [
+        "build.md",
+        "customizing.md",
+        "index.md",
+        "page.md",
+        "post.md",
+    ];
+    let outdir: PathBuf = [outdir, "share", "doc", "zond"].iter().collect();
     if !outdir.exists() {
         fs::create_dir_all(&outdir)?;
     }
@@ -43,11 +47,7 @@ fn compile_translation(outdir: &str, potfile: &str, lang: &str) -> Result<(), Bo
     let mut outfile = lcdir.clone();
     outfile.push("zond.mo");
     let output = process::Command::new("msgfmt")
-        .args([
-            infile.to_str().unwrap(),
-            "-o",
-            outfile.to_str().unwrap(),
-        ])
+        .args([infile.to_str().unwrap(), "-o", outfile.to_str().unwrap()])
         .output()?;
     assert!(output.status.success());
     println!("    {} -> {}", infile.display(), outfile.display());

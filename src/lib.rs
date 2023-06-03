@@ -30,6 +30,8 @@ pub mod error;
 pub(crate) mod link;
 /// A gemlog post
 pub(crate) mod post;
+/// An optional tinylog
+pub(crate) mod tinylog;
 
 pub use error::Error;
 

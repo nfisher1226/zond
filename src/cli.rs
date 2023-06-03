@@ -265,11 +265,24 @@ pub fn tinylog() -> Command {
         .about("Creates a new tinylog entry")
         .long_about("A tinlylog is a single file containing multiple short log entries")
         .visible_alias("tl")
-        .args([Arg::new("text")
-            .help("The full text of the tinylog entry")
-            .short('t')
-            .long("text")
-            .num_args(1)])
+        .args([
+            Arg::new("post")
+                .help("The full text of the tinylog entry")
+                .num_args(1)
+                .required_unless_present_any(["edit", "tags"])
+                .required(true),
+            Arg::new("tags")
+                .help("Adds one or more tags to the tinylog")
+                .short('t')
+                .long("tags")
+                .num_args(1..),
+            Arg::new("edit")
+                .help("Edit the tinlylog in your editor")
+                .short('e')
+                .long("edit")
+                .conflicts_with_all(["post", "tags"])
+                .action(ArgAction::SetTrue),
+        ])
 }
 
 #[must_use]
