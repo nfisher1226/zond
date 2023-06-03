@@ -246,6 +246,20 @@ section.",
         ])
 }
 
+pub fn tinylog() -> Command {
+    Command::new("tinylog")
+        .about("Creates a new tinylog entry")
+        .long_about("A tinlylog is a single file containing multiple short log entries")
+        .visible_alias("tl")
+        .args([
+            Arg::new("text")
+                .help("The full text of the tinylog entry")
+                .short('t')
+                .long("text")
+                .num_args(1),
+        ])
+}
+
 #[must_use]
 /// Generates the command line options
 pub fn zond() -> Command {
@@ -255,5 +269,5 @@ pub fn zond() -> Command {
         .version(env!("CARGO_PKG_VERSION"))
         .subcommand_required(true)
         .arg_required_else_help(true)
-        .subcommands([init(), build(), post(), page()])
+        .subcommands([init(), build(), post(), page(), tinylog()])
 }
