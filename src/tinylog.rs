@@ -7,11 +7,11 @@ use {
 };
 
 pub fn edit() -> Result<(), Error> {
-    Page::edit(Kind::Page(Some(PathBuf::from("content/tinylog"))), "")
+    Page::edit(Kind::Page(Some(PathBuf::from("content/tinylog.gmi"))), "")
 }
 
 pub fn tags(tags: &[String]) -> Result<(), Error> {
-    let path = PathBuf::from("content/tinylog");
+    let path = PathBuf::from("content/tinylog.gmi");
     if !path.exists() {
         init(None, None, None)?;
     }
@@ -31,10 +31,10 @@ pub fn init(
     summary: Option<&str>,
     tags: Option<Vec<&str>>,
 ) -> Result<(), Error> {
-    let path = PathBuf::from("content/tinylog");
+    let path = PathBuf::from("content/tinylog.gmi");
     if !path.exists() {
         let _path = Page::create(
-            Kind::Page(Some(PathBuf::from("tinylog.gmi"))),
+            Kind::Page(Some(path)),
             if let Some(t) = title { t } else { "Tinylog" },
             summary,
             tags.unwrap_or(vec![])
@@ -47,7 +47,7 @@ pub fn init(
 }
 
 pub fn update(text: &str, tags: Option<Vec<String>>) -> Result<(), Error> {
-    let path = PathBuf::from("content/tinylog");
+    let path = PathBuf::from("content/tinylog.gmi");
     if !path.exists() {
         init(None, None, None)?;
     }
@@ -56,7 +56,7 @@ pub fn update(text: &str, tags: Option<Vec<String>>) -> Result<(), Error> {
         let mut tiny = String::new();
         writeln!(
             tiny,
-            "## {}-{}-{} {}:{} UTC",
+            "## {}-{:02}-{:02} {}:{} UTC",
             time.year(),
             time.month(),
             time.day(),
