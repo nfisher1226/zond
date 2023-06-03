@@ -88,6 +88,12 @@ impl From<String> for Error {
     }
 }
 
+impl From<gettextrs::TextDomainError> for Error {
+    fn from(value: gettextrs::TextDomainError) -> Self {
+        Self::OtherError(value.to_string())
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
