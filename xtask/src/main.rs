@@ -8,6 +8,7 @@ use {
 include!("../../src/cli.rs");
 
 fn docs() -> Result<(), std::io::Error> {
+    println!("Installing documentation:");
     let docs = ["build.md", "customizing.md", "index.md", "page.md", "post.md"];
     let outdir: PathBuf = ["target", "dist", "share", "doc", "zond"]
         .iter()
@@ -101,6 +102,34 @@ fn manpages() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn compile_translation(potfile: &str, lang: &str) -> Result<(), Box<dyn Error>> {
+    let infile: PathBuf = ["po", potfile].iter().collect();
+    let lcdir: PathBuf = ["target", "dist", "share", "locale", lang, "LC_MESSAGES"]
+        .iter()
+        .collect();
+    if !lcdir.exists() {
+        fs::create_dir_all(&lcdir)?;
+    }
+    let mut outfile = lcdir.clone();
+    outfile.push("zond.mo");
+    let output = process::Command::new("msgfmt")
+        .args([
+            infile.to_str().unwrap(),
+            "-o",
+            outfile.to_str().unwrap(),
+        ])
+        .output()?;
+    assert!(output.status.success());
+    println!("    {} -> {}", infile.display(), outfile.display());
+    Ok(())
+}
+
+fn translations() -> Result<(), Box<dyn Error>> {
+    println!("Compiling translations:");
+    compile_translation("it.po", "it")?;
+    Ok(())
+}
+
 fn copy_bin() -> Result<(), Box<dyn Error>> {
     println!("Copying binary:");
     let bindir: PathBuf = ["target", "dist", "bin"].iter().collect();
@@ -137,6 +166,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         completions()?;
         manpages()?;
         docs()?;
+        translations()?;
     } else {
         usage();
     }

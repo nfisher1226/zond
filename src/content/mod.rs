@@ -10,6 +10,7 @@ use {
     crate::{config::DisplayDate, ToDisk, CONFIG},
     atom_syndication as atom,
     extract_frontmatter::{config::Splitter, Extractor},
+    gettextrs::gettext,
     ron::{
         de,
         ser::{to_string_pretty, PrettyConfig},
@@ -64,7 +65,7 @@ impl TryFrom<&Meta> for Categories {
                 Some(p) => PathBuf::from(&p),
                 None => PathBuf::from("/"),
             };
-            path.push(&PathBuf::from("tags"));
+            path.push(&PathBuf::from(gettext("tags")));
             path.push(&PathBuf::from(&tag));
             path.set_extension("gmi");
             let path = path.to_string_lossy();
@@ -232,32 +233,33 @@ impl Page {
             _ => writeln!(&mut writer, "{}\n", self.content)?,
         }
         if !self.meta.tags.is_empty() {
-            writeln!(&mut writer, "### Tags for this page")?;
+            writeln!(&mut writer, "### {}", gettext("Tags for this page"))?;
             let u = CONFIG.url()?;
             for tag in &self.meta.tags {
                 match depth {
-                    1 => writeln!(&mut writer, "=> tags/{tag}.gmi {tag}")?,
-                    2 => writeln!(&mut writer, "=> ../tags/{tag}.gmi {tag}")?,
-                    3 => writeln!(&mut writer, "=> ../../tags/{tag}.gmi {tag}")?,
-                    _ => writeln!(&mut writer, "=> {u}/tags/{tag}.gmi {tag}")?,
+                    1 => writeln!(&mut writer, "=> {}/{tag}.gmi {tag}", gettext("tags"))?,
+                    2 => writeln!(&mut writer, "=> ../{}/{tag}.gmi {tag}", gettext("tags"))?,
+                    3 => writeln!(&mut writer, "=> ../../{}/{tag}.gmi {tag}", gettext("tags"))?,
+                    _ => writeln!(&mut writer, "=> {u}/{}/{tag}.gmi {tag}", gettext("tags"))?,
                 }
             }
             writeln!(&mut writer)?;
         }
         writeln!(
             &mut writer,
-            "=> {} Home",
+            "=> {} {}",
             match depth {
                 1 => Cow::from("."),
                 2 => Cow::from(".."),
                 _ => Cow::from(CONFIG.url()?.to_string()),
-            }
+            },
+            gettext("Home"),
         )?;
         if let Some(p) = path.parent() {
             if let Some(n) = p.file_name() {
                 if let Some(s) = n.to_str() {
                     if s == "gemlog" {
-                        writeln!(&mut writer, "=> . All posts")?;
+                        writeln!(&mut writer, "=> . {}", gettext("All posts"))?;
                     }
                 }
             }

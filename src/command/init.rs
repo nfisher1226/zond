@@ -5,6 +5,7 @@ use {
         ToDisk,
     },
     clap::ArgMatches,
+    gettextrs::gettext,
     std::{fs, path::PathBuf, string::ToString},
     url::Url,
 };
@@ -25,14 +26,14 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
         if let Some((_user, _domain)) = email.split_once('@') {
             cfg.author.email = Some(email.to_string());
         } else {
-            return Err(format!("Invalid email address: {email}").into());
+            return Err(format!("{}: {email}", gettext("Invalid email address")).into());
         }
     }
     if let Some(addr) = matches.get_one::<String>("url") {
         if let Ok(url) = Url::parse(addr) {
             cfg.author.url = Some(url.to_string());
         } else {
-            return Err(format!("Invalid url: {addr}").into());
+            return Err(format!("{}: {addr}", gettext("Invalid url")).into());
         }
     }
     if let Some(domain) = matches.get_one::<String>("domain") {
@@ -50,7 +51,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
             "Atom" | "atom" => cfg.feed = Some(Feed::Atom),
             "Gemini" | "gemini" => cfg.feed = Some(Feed::Gemini),
             "Both" | "both" => cfg.feed = Some(Feed::Both),
-            s => return Err(format!("Invalid string: {s}").into()),
+            s => return Err(format!("{}: {s}", gettext("Invalid string")).into()),
         }
     }
     if let Some(l) = matches.get_one::<String>("license") {
@@ -60,7 +61,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
         cfg.show_email = match e.parse() {
             Ok(s) => s,
             Err(e) => {
-                eprintln!("Error parsing input: invalid boolean");
+                eprintln!("{}: {e}", gettext("Error parsing input"));
                 return Err(e.into());
             }
         };
@@ -72,7 +73,10 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     gemlog.push("gemlog");
     if !gemlog.exists() {
         if let Err(e) = fs::create_dir_all(&gemlog) {
-            eprintln!("Error creating gemlog content directory");
+            eprintln!(
+                "{}: {e}",
+                gettext("Error creating gemlog content directory")
+            );
             return Err(e.into());
         }
     }

@@ -9,3 +9,8 @@ clap = "4.0"
 clap_complete = "4.0"
 clap_mangen = "0.2"
 pulldown-cmark = "0.9"
+
+[dependencies.gettextrs]
+package = "gettext-rs"
+version = "0.7"
+features = ["gettext-system"]

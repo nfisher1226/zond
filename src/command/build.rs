@@ -8,6 +8,7 @@ use {
     atom_syndication::{self as atom, Feed},
     chrono::{Datelike, Utc},
     clap::ArgMatches,
+    gettextrs::gettext,
     std::{
         borrow::Cow,
         cmp,
@@ -106,7 +107,8 @@ impl TryFrom<&Capsule> for Feed {
             .id(url.to_string())
             .author(CONFIG.author.to_atom())
             .rights(atom::Text::plain(format!(
-                "© {year} by {}",
+                "© {year} {} {}",
+                gettext("by"),
                 &CONFIG.author.name
             )))
             .base(url.to_string())
@@ -137,7 +139,7 @@ impl Capsule {
         let banner = match crate::banner::get() {
             Some(Ok(s)) => Some(s.trim_end().to_string()),
             Some(Err(e)) => {
-                eprintln!("Error reading banner file");
+                eprintln!("{}: {e}", gettext("Error reading banner file"));
                 return Err(e.into());
             }
             None => None,
@@ -201,23 +203,30 @@ impl Capsule {
 
     /// Creates a gemtext page for each tag and an index page of all tags
     fn write_tags(&self, output: &Path) -> Result<(), crate::Error> {
-        let index_path = Index::get_path(output, Some(&PathBuf::from("tags")));
+        let tags = gettext("tags");
+        let index_path = Index::get_path(output, Some(&PathBuf::from(&tags)));
         let mut dest = PathBuf::from(output);
-        dest.push("tags");
+        dest.push(&tags);
         if !dest.exists() {
             fs::create_dir_all(&dest)?;
         }
         let fd = File::create(index_path)?;
         let mut writer = BufWriter::new(fd);
         let base_url = CONFIG.url()?;
-        let tags_url = base_url.join("tags/")?;
+        let tags_url = base_url.join(&format!("{tags}/"))?;
         match &self.banner {
             Some(s) => writeln!(
                 &mut writer,
-                "```\n{s}\n```# {}\n\n### All tags",
-                &CONFIG.title
+                "```\n{s}\n```# {}\n\n### {}",
+                &CONFIG.title,
+                gettext("All tags")
             )?,
-            None => writeln!(&mut writer, "# {}\n\n### All tags\n", &CONFIG.title)?,
+            None => writeln!(
+                &mut writer,
+                "# {}\n\n### {}\n",
+                &CONFIG.title,
+                gettext("All tags")
+            )?,
         }
         for (tag, links) in &self.tags {
             writeln!(&mut writer, "=> {}.gmi {}", &tag, &tag)?;
@@ -229,13 +238,17 @@ impl Capsule {
             match &self.banner {
                 Some(s) => writeln!(
                     &mut tagwriter,
-                    "```\n{s}\n```# {}\n\n### Pages tagged {}",
-                    &CONFIG.title, &tag
+                    "```\n{s}\n```# {}\n\n### {} {}",
+                    &CONFIG.title,
+                    gettext("Pages tagged"),
+                    &tag
                 )?,
                 None => writeln!(
                     &mut tagwriter,
-                    "# {}\n\n### Pages tagged {}",
-                    &CONFIG.title, &tag
+                    "# {}\n\n### {} {}",
+                    &CONFIG.title,
+                    gettext("Pages tagged"),
+                    &tag
                 )?,
             }
             for link in links {
@@ -246,7 +259,12 @@ impl Capsule {
                 };
                 writeln!(&mut tagwriter, "=> {url} {}", link.display)?;
             }
-            writeln!(&mut tagwriter, "=> . All tags\n=> .. Home")?;
+            writeln!(
+                &mut tagwriter,
+                "=> . {}\n=> .. {}",
+                gettext("All tags"),
+                gettext("Home"),
+            )?;
             let year = Utc::now().date_naive().year();
             crate::write_footer(&mut tagwriter, year)?;
         }
@@ -273,7 +291,7 @@ impl Capsule {
             Some(s) => writeln!(&mut writer, "```\n{s}\n```# {}\n", &CONFIG.title)?,
             None => writeln!(&mut writer, "# {}\n", &CONFIG.title)?,
         }
-        let mut posts = String::from("### Gemlog posts\n");
+        let mut posts = format!("### {}\n", gettext("Gemlog posts"));
         let num = cmp::min(CONFIG.entries, self.posts.len());
         let base = CONFIG.url()?;
         for post in self.posts.values().rev().take(num) {
@@ -285,7 +303,7 @@ impl Capsule {
             };
             writeln!(posts, "=> {url} {}", post.link.display)?;
         }
-        posts.push_str("=> gemlog/ All posts\n");
+        writeln!(posts, "=> gemlog/ {}\n", gettext("All posts"))?;
         let content = page.content.replace("{% posts %}", &posts);
         writeln!(&mut writer, "{content}")?;
         let year = Utc::now().date_naive().year();
@@ -308,7 +326,12 @@ impl Capsule {
             Some(s) => write!(&mut writer, "```\n{s}\n```# {}\n\n", &CONFIG.title)?,
             None => write!(&mut writer, "# {}\n\n", &CONFIG.title)?,
         }
-        write!(&mut writer, "{}\n\n### Gemlog posts\n", &page.content)?;
+        write!(
+            &mut writer,
+            "{}\n\n### {}\n",
+            &page.content,
+            gettext("Gemlog posts"),
+        )?;
         let base = CONFIG.url()?;
         let base = base.join("gemlog/index.gmi")?;
         for post in self.posts.values().rev() {
@@ -322,20 +345,28 @@ impl Capsule {
         }
         match &CONFIG.feed {
             Some(crate::config::Feed::Atom) => {
-                writeln!(&mut writer, "\n=> atom.xml Atom Feed")?;
+                writeln!(&mut writer, "\n=> atom.xml {}", gettext("Atom Feed"))?;
             }
             Some(crate::config::Feed::Gemini) => {
-                writeln!(&mut writer, "\n=> feed.gmi Gemini Feed")?;
+                writeln!(&mut writer, "\n=> feed.gmi {}", gettext("Gemini Feed"))?;
             }
             Some(crate::config::Feed::Both) => {
                 writeln!(
                     &mut writer,
-                    "\n=> atom.xml Atom Feed\n=> feed.gmi Gemini Feed"
+                    "\n=> atom.xml {}\n=> feed.gmi {}",
+                    gettext("Atom Feed"),
+                    gettext("Gemini Feed")
                 )?;
             }
             None => {}
         }
-        writeln!(&mut writer, "\n=> ../tags tags\n=> .. Home")?;
+        writeln!(
+            &mut writer,
+            "\n=> ../{} {}\n=> .. {}",
+            gettext("tags"),
+            gettext("tags"),
+            gettext("Home"),
+        )?;
         let year = Utc::now().date_naive().year();
         crate::write_footer(&mut writer, year)?;
         Ok(())

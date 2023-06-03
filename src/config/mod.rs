@@ -7,6 +7,7 @@ use crate::Error;
 use {
     crate::link::Link,
     atom_syndication as atom,
+    gettextrs::gettext,
     ron::ser::{to_writer_pretty, PrettyConfig},
     serde::{Deserialize, Serialize},
     std::{
@@ -109,14 +110,14 @@ impl Config {
         let cfg_file = match fs::read_to_string(cfg_file) {
             Ok(s) => s,
             Err(e) => {
-                eprintln!("Error reading config file");
+                eprintln!("{}: {e}", gettext("Error reading config file"));
                 return Err(e.into());
             }
         };
         match ron::de::from_str(&cfg_file) {
             Ok(s) => Ok(s),
             Err(e) => {
-                eprintln!("Error decoding config: {e}");
+                eprintln!("{}: {e}", gettext("Error decoding config"));
                 Err(e.into())
             }
         }
@@ -128,7 +129,7 @@ impl Config {
         let buf = File::create("Config.ron")?;
         let writer = BufWriter::new(buf);
         if let Err(e) = to_writer_pretty(writer, &self, pcfg) {
-            eprintln!("Error encoding config: {e}");
+            eprintln!("{}: {e}", gettext("Error encoding config"));
             return Err(e.into());
         }
         Ok(())
@@ -143,7 +144,7 @@ impl Config {
         let mut url = match Url::parse(&format!("gemini://{}", &self.domain)) {
             Ok(u) => u,
             Err(e) => {
-                eprintln!("Error parsing url from config data");
+                eprintln!("{}: {e}", gettext("Error parsing url from config data"));
                 return Err(e.into());
             }
         };

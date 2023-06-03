@@ -1,6 +1,7 @@
 use {
     crate::content::{Kind, Page},
     clap::ArgMatches,
+    gettextrs::gettext,
     std::string::ToString,
 };
 
@@ -9,7 +10,7 @@ use {
 /// Errors are bubbled up from the called functions
 pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     let Some(title) = matches.get_one::<String>("title") else {
-        return Err(String::from("Missing title").into());
+        return Err(gettext("Missing title").into());
     };
     match matches.subcommand() {
         Some(("init", init_matches)) => {

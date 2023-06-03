@@ -1,0 +1,301 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: zond\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-11-11 23:50+0200\n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: none\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.2\n"
+
+#: src/lib.rs:39
+msgid "Error loading config"
+msgstr ""
+
+#: src/lib.rs:67
+msgid "Error creating directory in trait `ToDisk` for `atom_syndication::Feed`"
+msgstr ""
+
+#: src/lib.rs:80
+msgid "Error creating file in trait `ToDisk` for `atom_syndication::Feed`"
+msgstr ""
+
+#: src/lib.rs:95
+msgid "Error writing to file in trait `ToDisk` for `atom_syndication::Feed`"
+msgstr ""
+
+#: src/lib.rs:122
+msgid "All content for this site is licensed as"
+msgstr "Tutto il contenuto di questa capsula è diffuso sotto la licenza"
+
+#: src/lib.rs:134
+msgid "Contact"
+msgstr "Contattami"
+
+#: src/content/index.rs:34
+msgid "Error writing index to disk"
+msgstr ""
+
+#: src/command/build.rs:109
+msgid "by"
+msgstr "di"
+
+#: src/command/build.rs:140
+msgid "Error reading banner file"
+msgstr ""
+
+#: src/command/build.rs:204
+msgid "tags"
+msgstr "Segnalibri"
+
+#: src/command/build.rs:220
+msgid "All tags"
+msgstr "Tutti i segnalibri"
+
+#: src/command/build.rs:241
+msgid "Pages tagged"
+msgstr "Pagine nel segnalibro"
+
+#: src/command/build.rs:264
+msgid "Home"
+msgstr "Ingresso"
+
+#: src/command/build.rs:292
+msgid "Gemlog posts"
+msgstr "Aggiornamenti gemlog"
+
+#: src/command/build.rs:304
+msgid "All posts"
+msgstr "Tutti gli aggiornamenti"
+
+#: src/command/build.rs:346
+msgid "Atom Feed"
+msgstr "Feed Atom"
+
+#: src/command/build.rs:349
+msgid "Gemini Feed"
+msgstr "Feed Gemini"
+
+#: src/command/post.rs:13
+msgid "Missing title"
+msgstr ""
+
+#: src/command/init.rs:29
+msgid "Invalid email address"
+msgstr ""
+
+#: src/command/init.rs:36
+msgid "Invalid url"
+msgstr ""
+
+#: src/command/init.rs:49
+msgid "Error parsing number for entry display"
+msgstr ""
+
+#: src/command/init.rs:62
+msgid "Invalid string"
+msgstr ""
+
+#: src/command/init.rs:72
+msgid "Error parsing input"
+msgstr ""
+
+#: src/command/init.rs:84
+msgid "Error creating gemlog content directory"
+msgstr ""
+
+#: src/content/mod.rs:228
+msgid "Tags for this page"
+msgstr "Segnalibri per questa pagina"
+
+#: src/config/mod.rs:113
+msgid "Error reading config file"
+msgstr ""
+
+#: src/config/mod.rs:120
+msgid "Error decoding config"
+msgstr ""
+
+#: src/config/mod.rs:132
+msgid "Error encoding config"
+msgstr ""
+
+#: src/config/mod.rs:147
+msgid "Error parsing url from config data"
+msgstr ""
+
+#: src/error.rs:95
+msgid "Format error"
+msgstr ""
+
+#: src/error.rs:96
+msgid "Path prefix error"
+msgstr ""
+
+#: src/error.rs:97
+msgid "Parse bool error"
+msgstr ""
+
+#: src/error.rs:98
+msgid "Parse int error"
+msgstr ""
+
+#: src/error.rs:99
+msgid "Parse enum error"
+msgstr ""
+
+#: src/error.rs:101
+msgid "Time error"
+msgstr ""
+
+#: src/error.rs:102
+msgid "Url error"
+msgstr ""
+
+#: src/error.rs:103
+msgid "Editor error"
+msgstr ""
+
+#: src/cli.rs:10
+msgid "Initialize a new capsule"
+msgstr ""
+
+#: src/cli.rs:17
+msgid "The title of this caspule"
+msgstr ""
+
+#: src/cli.rs:23
+msgid "The principle author of this capsule"
+msgstr ""
+
+#: src/cli.rs:29
+msgid "The email address of the principle author"
+msgstr ""
+
+#: src/cli.rs:35
+msgid "The principle author's homepage"
+msgstr ""
+
+#: src/cli.rs:41
+msgid "The domain serving this capsule"
+msgstr ""
+
+#: src/cli.rs:47
+msgid "The path from the server root to this capsule"
+msgstr ""
+
+#: src/cli.rs:53
+msgid "Number of gemlog entries to display links for on the homepage"
+msgstr ""
+
+#: src/cli.rs:59
+msgid "Which pages to display the publication date under the title"
+msgstr ""
+
+#: src/cli.rs:70
+msgid "The type of feed to generate. Atom, Gemini, or Both"
+msgstr ""
+
+#: src/cli.rs:76
+msgid ""
+"Commons license to use. One of CcBy, CcBySa, CcByNc, CcByNcSa, CcByNd, "
+"CcByNcNd. For information on Creative Commons licenses, see https://"
+"creativecommons.org/about/cclicenses/"
+msgstr ""
+
+#: src/cli.rs:82
+msgid "Add a link to the author's email on each page"
+msgstr ""
+
+#: src/cli.rs:92
+msgid "Build the capsule"
+msgstr ""
+
+#: src/cli.rs:99
+msgid "The location to output the generated capsule"
+msgstr ""
+
+#: src/cli.rs:109
+msgid "Initializes a new post"
+msgstr ""
+
+#: src/cli.rs:114
+msgid "A short summary of the post (optional)"
+msgstr ""
+
+#: src/cli.rs:120
+msgid "Tags for this post (optional)"
+msgstr ""
+
+#: src/cli.rs:126
+msgid "Edit the newly created post"
+msgstr ""
+
+#: src/cli.rs:138
+msgid "Manage gemlog posts"
+msgstr ""
+
+#: src/cli.rs:140
+msgid ""
+"A post is just a page residing in the \"gemlog\" subdirectory, which gets "
+"indexe"
+msgstr ""
+
+#: src/cli.rs:150
+msgid "The title of the post"
+msgstr ""
+
+#: src/cli.rs:156
+msgid "Marks the post as published"
+msgstr ""
+
+#: src/cli.rs:159
+msgid "Opens the post in an editor"
+msgstr ""
+
+#: src/cli.rs:169
+msgid "Initializes a new page"
+msgstr ""
+
+#: src/cli.rs:174
+msgid "A short summary of the page (optional)"
+msgstr ""
+
+#: src/cli.rs:180
+msgid "Tags for this page (optional)"
+msgstr ""
+
+#: src/cli.rs:186
+msgid "Edit the newly created page"
+msgstr ""
+
+#: src/cli.rs:198
+msgid ""
+"Pages must be published before they will appear in the generated capsule. "
+"Page"
+msgstr ""
+
+#: src/cli.rs:211
+msgid "The title of the page"
+msgstr ""
+
+#: src/cli.rs:216
+msgid "Path to the page"
+msgstr ""
+
+#: src/cli.rs:230
+msgid "Marks the page as published"
+msgstr ""
+
+#: src/cli.rs:233
+msgid "Opens the page in an editor"
+msgstr ""
+
+#: src/cli.rs:243
+msgid "A static Gemini capsule generator"
+msgstr ""

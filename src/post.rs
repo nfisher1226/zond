@@ -5,6 +5,7 @@ use {
         CONFIG,
     },
     atom_syndication as atom,
+    gettextrs::gettext,
 };
 
 #[derive(Default)]
@@ -31,8 +32,9 @@ impl TryFrom<&Post> for atom::Entry {
             .link(link)
             .published(post.meta.published.as_ref().unwrap().to_date_time()?)
             .rights(atom::Text::plain(format!(
-                "© {} by {}",
+                "© {} {} {}",
                 post.meta.published.as_ref().unwrap().year(),
+                gettext("by"),
                 &CONFIG.author.name
             )))
             .summary(post.meta.summary.as_ref().map(atom::Text::plain))
