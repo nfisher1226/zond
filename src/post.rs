@@ -6,6 +6,7 @@ use {
     },
     atom_syndication as atom,
     gettextrs::gettext,
+    tinylog::Time as _,
 };
 
 #[derive(Default)]

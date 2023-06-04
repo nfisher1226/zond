@@ -263,13 +263,19 @@ section.",
 pub fn tinylog() -> Command {
     Command::new("tinylog")
         .about("Creates a new tinylog entry")
-        .long_about("A tinlylog is a single file containing multiple short log entries")
+        .long_about(
+            "A tinlylog is a single file containing multiple short log \
+            entries. If a quoted string is passed to this command, that string \
+            will be appended to the tinylog as a new entry. If the `edit` flag \
+            is passed, the log file will be opened in an editor. If this command \
+            is called with no arguments an editor will be opened to create a new \
+            tinylog entry.",
+        )
         .visible_alias("tl")
         .args([
             Arg::new("post")
                 .help("The full text of the tinylog entry")
                 .num_args(1)
-                .required_unless_present_any(["edit", "tags"])
                 .required(true),
             Arg::new("tags")
                 .help("Adds one or more tags to the tinylog")

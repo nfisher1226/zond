@@ -19,6 +19,7 @@ use {
         io::{BufWriter, Write as IoWrite},
         path::{Path, PathBuf},
     },
+    tinylog::Time as _,
     url::Url,
     walkdir::WalkDir,
 };

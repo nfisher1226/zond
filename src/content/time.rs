@@ -4,7 +4,7 @@ use {
     std::fmt,
 };
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, PartialOrd, Serialize)]
 /// Conversion middleman because `chrono::DateTime` does not support serde
 pub struct Time {
     year: i32,
@@ -13,6 +13,45 @@ pub struct Time {
     hour: u32,
     minute: u32,
     second: u32,
+}
+
+impl tinylog::Time for Time {
+    fn year(&self) -> u32 {
+        self.year
+            .try_into()
+            .expect("Year is before Unix epoch time")
+    }
+
+    fn month(&self) -> u32 {
+        self.month
+    }
+
+    fn day(&self) -> u32 {
+        self.day
+    }
+
+    fn hour(&self) -> u32 {
+        self.hour
+    }
+
+    fn minute(&self) -> u32 {
+        self.minute
+    }
+
+    fn tz(&self) -> String {
+        "UTC".to_string()
+    }
+
+    fn from_parts(year: u32, month: u32, day: u32, hour: u32, minute: u32, _tz: String) -> Self {
+        Self {
+            year: year.try_into().expect("Year is out of range"),
+            month,
+            day,
+            hour,
+            minute,
+            second: 0,
+        }
+    }
 }
 
 impl fmt::Display for Time {
@@ -37,27 +76,6 @@ impl Time {
             minute: utc.time().minute(),
             second: utc.time().second(),
         }
-    }
-
-    /// Retreives the year stored in this struct
-    pub fn year(&self) -> i32 {
-        self.year
-    }
-
-    pub fn month(&self) -> u32 {
-        self.month
-    }
-
-    pub fn day(&self) -> u32 {
-        self.day
-    }
-
-    pub fn hour(&self) -> u32 {
-        self.hour
-    }
-
-    pub fn minute(&self) -> u32 {
-        self.minute
     }
 
     /// Returns a `String` representing rfc3339 dat/time format

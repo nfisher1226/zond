@@ -33,7 +33,7 @@ pub(crate) mod post;
 /// An optional tinylog
 pub(crate) mod tinylog;
 
-pub use error::Error;
+pub use {content::edit, error::Error};
 
 static CONFIG: Lazy<Config> = Lazy::new(|| match Config::load() {
     Ok(c) => c,

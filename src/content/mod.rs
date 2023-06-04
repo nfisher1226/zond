@@ -5,7 +5,7 @@ pub mod index;
 /// Date and time functionality
 mod time;
 
-pub use time::Time;
+pub use {editor::edit, time::Time};
 use {
     crate::{config::DisplayDate, ToDisk, CONFIG},
     atom_syndication as atom,
@@ -23,6 +23,7 @@ use {
         path::{Path, PathBuf},
         string::ToString,
     },
+    tinylog::Time as _,
     url::Url,
 };
 
@@ -232,6 +233,9 @@ impl Page {
             }
             _ => writeln!(&mut writer, "{}\n", self.content)?,
         }
+        if path.file_name().unwrap().to_str().unwrap() == "tinylog.gmi" {
+            return Ok(());
+        }
         if !self.meta.tags.is_empty() {
             writeln!(&mut writer, "### {}", gettext("Tags for this page"))?;
             let u = CONFIG.url()?;
@@ -265,7 +269,7 @@ impl Page {
             }
         }
         let year = self.meta.published.as_ref().unwrap().year();
-        crate::write_footer(&mut writer, year)?;
+        crate::write_footer(&mut writer, year.try_into().expect("Year is out of range"))?;
         Ok(())
     }
 }

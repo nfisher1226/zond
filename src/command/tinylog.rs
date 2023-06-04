@@ -16,6 +16,8 @@ pub fn run(matches: &ArgMatches) -> Result<(), Error> {
         tinylog::tags(&tags)?;
     } else if matches.get_flag("edit") {
         tinylog::edit()?;
+    } else {
+        tinylog::create_post()?;
     }
     Ok(())
 }
