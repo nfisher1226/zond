@@ -13,4 +13,4 @@ subcommand can also be done to a post using the `post` subcommand (excepting the
 To specify the number of posts which will appear in the main index, set the
 `entries` field as desired in the capsule's `Config.ron` file.
 
-Next: [Building the capsule](build.md)
+Next: [The Tinylog](tinylog.md)

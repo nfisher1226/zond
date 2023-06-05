@@ -2,7 +2,6 @@ use {
     crate::{
         content::{Categories, Meta},
         link::Link,
-        CFG,
     },
     atom_syndication as atom,
     gettextrs::gettext,
@@ -20,7 +19,7 @@ impl TryFrom<&Post> for atom::Entry {
 
     /// Generates an atom feed entry for this post
     fn try_from(post: &Post) -> Result<atom::Entry, Self::Error> {
-        let cfg = CFG.get().unwrap();
+        let cfg = crate::load_config();
         let mut link = atom::Link::default();
         link.set_href(&post.link.url);
         link.set_rel("alternate");

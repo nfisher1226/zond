@@ -1,13 +1,9 @@
-use std::process;
-
-use crate::config::Config;
-
 use {
     crate::{
         content::{index::Index, Page, Time},
         link::Link,
         post::Post,
-        GetPath, ToDisk, CFG,
+        GetPath, ToDisk,
     },
     atom_syndication::{self as atom, Feed},
     chrono::{Datelike, Utc},
@@ -37,13 +33,7 @@ type Tags = HashMap<String, Vec<Link>>;
 /// # Errors
 /// Errors are bubbled up from the called functions
 pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
-    let cfg = CFG.get_or_init(|| match Config::load() {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("{}: {e}", gettext("Error loading config"));
-            process::exit(1);
-        }
-    });
+    let cfg = crate::load_config();
     let mut output = PathBuf::from(
         matches
             .get_one::<String>("output")
@@ -96,6 +86,7 @@ impl TryFrom<&Capsule> for Feed {
 
     /// Generates an Atom feed from the metadata
     fn try_from(capsule: &Capsule) -> Result<Feed, Self::Error> {
+        let cfg = crate::load_config();
         let mut entries: Vec<atom::Entry> = vec![];
         for entry in capsule.posts.values().rev() {
             entries.push(entry.try_into()?);
@@ -110,7 +101,6 @@ impl TryFrom<&Capsule> for Feed {
         } else {
             Time::now().year()
         };
-        let cfg = CFG.get().unwrap();
         let mut url = cfg.url()?;
         if let Some(p) = &cfg.path {
             url.set_path(p);
@@ -216,6 +206,7 @@ impl Capsule {
 
     /// Creates a gemtext page for each tag and an index page of all tags
     fn write_tags(&self, output: &Path) -> Result<(), crate::Error> {
+        let cfg = crate::load_config();
         let tags = gettext("tags");
         let index_path = Index::get_path(output, Some(&PathBuf::from(&tags)));
         let mut dest = PathBuf::from(output);
@@ -225,7 +216,6 @@ impl Capsule {
         }
         let fd = File::create(index_path)?;
         let mut writer = BufWriter::new(fd);
-        let cfg = CFG.get().unwrap();
         let base_url = cfg.url()?;
         let tags_url = base_url.join(&format!("{tags}/"))?;
         match &self.banner {
@@ -290,6 +280,7 @@ impl Capsule {
 
     /// Renders the capsule main index and writes it to disk
     fn write_index(&self, output: &Path) -> Result<(), crate::Error> {
+        let cfg = crate::load_config();
         let origin: PathBuf = ["content", "index.gmi"].iter().collect();
         let outfile = Index::get_path(&PathBuf::from(output), None);
         let fd = File::create(outfile)?;
@@ -301,7 +292,6 @@ impl Capsule {
             idx.content.push_str("{% posts %}");
             idx
         };
-        let cfg = CFG.get().unwrap();
         match &self.banner {
             Some(s) => writeln!(&mut writer, "```\n{s}\n```# {}\n", &cfg.title)?,
             None => writeln!(&mut writer, "# {}\n", &cfg.title)?,
@@ -328,6 +318,7 @@ impl Capsule {
 
     /// Renders the gemlog index and writes it to disk
     fn write_gemlog_index(&self, output: &Path) -> Result<(), crate::Error> {
+        let cfg = crate::load_config();
         let origin: PathBuf = ["content", "gemlog", "index.gmi"].iter().collect();
         let outfile = Index::get_path(&PathBuf::from(output), Some(&PathBuf::from("gemlog")));
         let fd = File::create(outfile)?;
@@ -337,7 +328,6 @@ impl Capsule {
         } else {
             Page::default()
         };
-        let cfg = CFG.get().unwrap();
         match &self.banner {
             Some(s) => write!(&mut writer, "```\n{s}\n```# {}\n\n", &cfg.title)?,
             None => write!(&mut writer, "# {}\n\n", &cfg.title)?,
@@ -389,7 +379,7 @@ impl Capsule {
     }
 
     fn write_gemfeed(&self, output: &Path) -> Result<(), crate::Error> {
-        let cfg = CFG.get().unwrap();
+        let cfg = crate::load_config();
         let mut outfile = output.to_path_buf();
         outfile.push("gemlog");
         outfile.push("feed.gmi");

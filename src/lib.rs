@@ -8,6 +8,7 @@ use {
         fs::{self, File},
         io::{BufReader, BufWriter, Write},
         path::{Path, PathBuf},
+        process,
         sync::OnceLock,
     },
     xml::{EmitterConfig, EventReader},
@@ -35,6 +36,16 @@ pub(crate) mod tinylog;
 pub use {content::edit, error::Error};
 
 static CFG: OnceLock<Config> = OnceLock::new();
+
+pub fn load_config() -> &'static Config {
+    CFG.get_or_init(|| match Config::load() {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("Error loading config: {e}");
+            process::exit(1);
+        }
+    })
+}
 
 /// Saves a content type to disk
 pub trait ToDisk {
@@ -112,7 +123,7 @@ impl GetPath for Feed {
 /// Returns `io::Error` if writing to disk fails
 pub fn write_footer(writer: &mut BufWriter<File>, year: i32) -> Result<(), crate::Error> {
     writeln!(writer)?;
-    let cfg = CFG.get().unwrap();
+    let cfg = load_config();
     if let Some(license) = &cfg.license {
         writeln!(
             writer,

@@ -6,7 +6,7 @@ pub mod index;
 mod time;
 
 use {
-    crate::{config::DisplayDate, ToDisk, CFG},
+    crate::{config::DisplayDate, ToDisk},
     atom_syndication as atom,
     extract_frontmatter::{config::Splitter, Extractor},
     gettextrs::gettext,
@@ -59,8 +59,8 @@ impl TryFrom<&Meta> for Categories {
     type Error = crate::Error;
 
     fn try_from(meta: &Meta) -> Result<Self, Self::Error> {
+        let cfg = crate::load_config();
         let mut categories = Vec::new();
-        let cfg = CFG.get().unwrap();
         for tag in &meta.tags {
             let mut url = Url::parse(&format!("gemini://{}", cfg.domain))?;
             let mut path = match &cfg.path {
@@ -210,12 +210,12 @@ impl Page {
         depth: usize,
         banner: &Option<String>,
     ) -> Result<(), crate::Error> {
+        let cfg = crate::load_config();
         if let Some(p) = path.parent() {
             if !p.exists() {
                 fs::create_dir_all(p)?;
             }
         }
-        let cfg = CFG.get().unwrap();
         let fd = File::create(path)?;
         let mut writer = BufWriter::new(fd);
         if let Some(s) = banner {
