@@ -275,8 +275,7 @@ pub fn tinylog() -> Command {
         .args([
             Arg::new("post")
                 .help("The full text of the tinylog entry")
-                .num_args(1)
-                .required(true),
+                .num_args(1),
             Arg::new("tags")
                 .help("Adds one or more tags to the tinylog")
                 .short('t')

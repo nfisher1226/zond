@@ -4,9 +4,9 @@ version = 3
 
 [[package]]
 name = "aho-corasick"
-version = "1.0.1"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67fc08ce920c31afb70f013dcce1bfc3a3195de6a228474e45e1f145b36f8d04"
+checksum = "43f6cb1bf222025340178f382c426f13757b2960e89779dfcb319c32542a5a41"
 dependencies = [
  "memchr",
 ]
@@ -544,9 +544,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.17.2"
+version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9670a07f94779e00908f3e686eab508878ebb390ba6e604d3a284c00e8d0487b"
+checksum = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d"
 
 [[package]]
 name = "package-bootstrap"
@@ -729,15 +729,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "tinylog"
+name = "tinylog-gmi"
 version = "0.1.0"
-source = "git+https://codeberg.org/jeang3nie/tinylog-rs.git#ef42ded6a96e42e6e2a41576e2cf7c5180a0c48d"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8d89c44311b60aa037f9c8e31f50244f6bec047771a270c9eed9959da7a51fdc"
 
 [[package]]
 name = "tinyrand"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "87ffaad2263779579369d45f65cad0647c860893d27e4543cdcc1e428d07da2c"
+
+[[package]]
+name = "tinyrand-std"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4328fbf2b798a35faaa4f1139fa7efe6ab0449efc31cac5d107d69844a5acd30"
+dependencies = [
+ "tinyrand",
+]
 
 [[package]]
 name = "tinyvec"
@@ -1004,13 +1014,13 @@ dependencies = [
  "clap",
  "extract-frontmatter",
  "gettext-rs",
- "once_cell",
  "package-bootstrap",
  "pulldown-cmark",
  "ron",
  "serde",
- "tinylog",
+ "tinylog-gmi",
  "tinyrand",
+ "tinyrand-std",
  "url",
  "walkdir",
  "xml-rs",

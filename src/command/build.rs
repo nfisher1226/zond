@@ -1,9 +1,13 @@
+use std::process;
+
+use crate::config::Config;
+
 use {
     crate::{
         content::{index::Index, Page, Time},
         link::Link,
         post::Post,
-        GetPath, ToDisk, CONFIG,
+        GetPath, ToDisk, CFG,
     },
     atom_syndication::{self as atom, Feed},
     chrono::{Datelike, Utc},
@@ -33,12 +37,19 @@ type Tags = HashMap<String, Vec<Link>>;
 /// # Errors
 /// Errors are bubbled up from the called functions
 pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
+    let cfg = CFG.get_or_init(|| match Config::load() {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("{}: {e}", gettext("Error loading config"));
+            process::exit(1);
+        }
+    });
     let mut output = PathBuf::from(
         matches
             .get_one::<String>("output")
             .map_or("public", std::string::String::as_str),
     );
-    if let Some(ref path) = CONFIG.path {
+    if let Some(ref path) = cfg.path {
         output.push(path);
     }
     if !output.exists() {
@@ -49,7 +60,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
         fs::remove_dir_all(&output)?;
     }
     let capsule = Capsule::init(&output)?;
-    match CONFIG.feed {
+    match cfg.feed {
         Some(crate::config::Feed::Atom) => {
             let atom = Feed::try_from(&capsule)?;
             let dest = Feed::get_path(&output, None);
@@ -99,18 +110,19 @@ impl TryFrom<&Capsule> for Feed {
         } else {
             Time::now().year()
         };
-        let mut url = CONFIG.url()?;
-        if let Some(p) = &CONFIG.path {
+        let cfg = CFG.get().unwrap();
+        let mut url = cfg.url()?;
+        if let Some(p) = &cfg.path {
             url.set_path(p);
         }
         let feed = atom::FeedBuilder::default()
-            .title(CONFIG.title.to_string())
+            .title(cfg.title.to_string())
             .id(url.to_string())
-            .author(CONFIG.author.to_atom())
+            .author(cfg.author.to_atom())
             .rights(atom::Text::plain(format!(
                 "© {year} {} {}",
                 gettext("by"),
-                &CONFIG.author.name
+                &cfg.author.name
             )))
             .base(url.to_string())
             .entries(entries)
@@ -213,19 +225,20 @@ impl Capsule {
         }
         let fd = File::create(index_path)?;
         let mut writer = BufWriter::new(fd);
-        let base_url = CONFIG.url()?;
+        let cfg = CFG.get().unwrap();
+        let base_url = cfg.url()?;
         let tags_url = base_url.join(&format!("{tags}/"))?;
         match &self.banner {
             Some(s) => writeln!(
                 &mut writer,
                 "```\n{s}\n```# {}\n\n### {}",
-                &CONFIG.title,
+                &cfg.title,
                 gettext("All tags")
             )?,
             None => writeln!(
                 &mut writer,
                 "# {}\n\n### {}\n",
-                &CONFIG.title,
+                &cfg.title,
                 gettext("All tags")
             )?,
         }
@@ -240,14 +253,14 @@ impl Capsule {
                 Some(s) => writeln!(
                     &mut tagwriter,
                     "```\n{s}\n```# {}\n\n### {} {}",
-                    &CONFIG.title,
+                    &cfg.title,
                     gettext("Pages tagged"),
                     &tag
                 )?,
                 None => writeln!(
                     &mut tagwriter,
                     "# {}\n\n### {} {}",
-                    &CONFIG.title,
+                    &cfg.title,
                     gettext("Pages tagged"),
                     &tag
                 )?,
@@ -288,13 +301,14 @@ impl Capsule {
             idx.content.push_str("{% posts %}");
             idx
         };
+        let cfg = CFG.get().unwrap();
         match &self.banner {
-            Some(s) => writeln!(&mut writer, "```\n{s}\n```# {}\n", &CONFIG.title)?,
-            None => writeln!(&mut writer, "# {}\n", &CONFIG.title)?,
+            Some(s) => writeln!(&mut writer, "```\n{s}\n```# {}\n", &cfg.title)?,
+            None => writeln!(&mut writer, "# {}\n", &cfg.title)?,
         }
         let mut posts = format!("### {}\n", gettext("Gemlog posts"));
-        let num = cmp::min(CONFIG.entries, self.posts.len());
-        let base = CONFIG.url()?;
+        let num = cmp::min(cfg.entries, self.posts.len());
+        let base = cfg.url()?;
         for post in self.posts.values().rev().take(num) {
             let url = Url::parse(&post.link.url)?;
             let url = if let Some(u) = base.make_relative(&url) {
@@ -323,9 +337,10 @@ impl Capsule {
         } else {
             Page::default()
         };
+        let cfg = CFG.get().unwrap();
         match &self.banner {
-            Some(s) => write!(&mut writer, "```\n{s}\n```# {}\n\n", &CONFIG.title)?,
-            None => write!(&mut writer, "# {}\n\n", &CONFIG.title)?,
+            Some(s) => write!(&mut writer, "```\n{s}\n```# {}\n\n", &cfg.title)?,
+            None => write!(&mut writer, "# {}\n\n", &cfg.title)?,
         }
         write!(
             &mut writer,
@@ -333,7 +348,7 @@ impl Capsule {
             &page.content,
             gettext("Gemlog posts"),
         )?;
-        let base = CONFIG.url()?;
+        let base = cfg.url()?;
         let base = base.join("gemlog/index.gmi")?;
         for post in self.posts.values().rev() {
             let url = Url::parse(&post.link.url)?;
@@ -344,7 +359,7 @@ impl Capsule {
             };
             writeln!(&mut writer, "=> {url} {}", post.link.display)?;
         }
-        match &CONFIG.feed {
+        match &cfg.feed {
             Some(crate::config::Feed::Atom) => {
                 writeln!(&mut writer, "\n=> atom.xml {}", gettext("Atom Feed"))?;
             }
@@ -374,12 +389,13 @@ impl Capsule {
     }
 
     fn write_gemfeed(&self, output: &Path) -> Result<(), crate::Error> {
+        let cfg = CFG.get().unwrap();
         let mut outfile = output.to_path_buf();
         outfile.push("gemlog");
         outfile.push("feed.gmi");
         let fd = File::create(outfile)?;
         let mut writer = BufWriter::new(fd);
-        writeln!(&mut writer, "# {}\n", &CONFIG.title)?;
+        writeln!(&mut writer, "# {}\n", &cfg.title)?;
         for entry in self.posts.values().rev() {
             writeln!(&mut writer, "{}", entry.link,)?;
         }

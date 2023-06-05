@@ -1,5 +1,5 @@
 use {
-    crate::{content::Meta, CONFIG},
+    crate::{content::Meta, CFG},
     serde::{Deserialize, Serialize},
     std::{env, fmt, path::Path},
 };
@@ -22,7 +22,8 @@ impl Link {
     /// Takes the original path in the content tree and meta information and
     /// returns a `Link` struct
     pub fn get(origin: &Path, meta: &Meta) -> Result<Self, crate::Error> {
-        let mut url = CONFIG.url()?;
+        let cfg = CFG.get().unwrap();
+        let mut url = cfg.url()?;
         let mut current = env::current_dir()?;
         current.push("content");
         let path = origin.strip_prefix(current)?;

@@ -1,11 +1,14 @@
+use std::fs;
+
 use {
     crate::{
         content::{Kind, Page, Time},
         Error, ToDisk,
     },
     std::{fs::File, path::PathBuf},
-    tinylog::{Entry, Time as _, Tinylog},
-    tinyrand::{Rand, StdRand, RandRange},
+    tinylog::{Entry, Tinylog},
+    tinyrand::{Rand, RandRange, Seeded, StdRand},
+    tinyrand_std::clock_seed::ClockSeed,
 };
 
 pub fn edit() -> Result<(), Error> {
@@ -76,14 +79,8 @@ pub fn update(text: &str, tags: Option<Vec<String>>) -> Result<(), Error> {
 }
 
 pub fn create_post() -> Result<(), Error> {
-    /*let tmpfile = unsafe {
-        let template = "zond-XXXXXX".to_string().into_bytes();
-        let mut cbytes = template.iter().map(|c| *c as i8).collect::<Vec<i8>>();
-        cbytes.push(0);
-        let t = libc::mkstemp(cbytes.as_mut_ptr());
-        CStr::from_ptr(t as *const i8).to_str().unwrap().to_string()
-    };*/
-    let mut rand = StdRand::default();
+    let seed = ClockSeed::default().next_u64();
+    let mut rand = StdRand::seed(seed);
     let mut s = "/tmp/zond-".to_string();
     for _n in 0..9 {
         let c = char::from(rand.next_range(97_u32..123) as u8);
@@ -92,5 +89,10 @@ pub fn create_post() -> Result<(), Error> {
     let fd = File::create(&s);
     drop(fd);
     crate::edit(&s)?;
-    todo!()
+    let post = fs::read_to_string(&s)?;
+    if !post.is_empty() {
+        update(&post, None)?;
+    }
+    fs::remove_file(&s)?;
+    Ok(())
 }

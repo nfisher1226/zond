@@ -4,12 +4,11 @@ use {
     atom_syndication::Feed,
     config::Config,
     gettextrs::gettext,
-    once_cell::sync::Lazy,
     std::{
         fs::{self, File},
         io::{BufReader, BufWriter, Write},
         path::{Path, PathBuf},
-        process,
+        sync::OnceLock,
     },
     xml::{EmitterConfig, EventReader},
 };
@@ -35,13 +34,7 @@ pub(crate) mod tinylog;
 
 pub use {content::edit, error::Error};
 
-static CONFIG: Lazy<Config> = Lazy::new(|| match Config::load() {
-    Ok(c) => c,
-    Err(e) => {
-        eprintln!("{}: {e}", gettext("Error loading config"));
-        process::exit(1);
-    }
-});
+static CFG: OnceLock<Config> = OnceLock::new();
 
 /// Saves a content type to disk
 pub trait ToDisk {
@@ -119,19 +112,20 @@ impl GetPath for Feed {
 /// Returns `io::Error` if writing to disk fails
 pub fn write_footer(writer: &mut BufWriter<File>, year: i32) -> Result<(), crate::Error> {
     writeln!(writer)?;
-    if let Some(license) = &CONFIG.license {
+    let cfg = CFG.get().unwrap();
+    if let Some(license) = &cfg.license {
         writeln!(
             writer,
             "{} {license}.",
             gettext("All content for this site is licensed as")
         )?;
     }
-    writeln!(writer, "© {year} {} {}", gettext("by"), CONFIG.author.name,)?;
-    for link in &CONFIG.footer_links {
+    writeln!(writer, "© {year} {} {}", gettext("by"), cfg.author.name,)?;
+    for link in &cfg.footer_links {
         writeln!(writer, "{link}")?;
     }
-    if CONFIG.show_email {
-        if let Some(ref email) = CONFIG.author.email {
+    if cfg.show_email {
+        if let Some(ref email) = cfg.author.email {
             writeln!(writer, "=> mailto:{email} {}", gettext("Contact"))?;
         }
     }

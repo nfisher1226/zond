@@ -5,9 +5,8 @@ pub mod index;
 /// Date and time functionality
 mod time;
 
-pub use {editor::edit, time::Time};
 use {
-    crate::{config::DisplayDate, ToDisk, CONFIG},
+    crate::{config::DisplayDate, ToDisk, CFG},
     atom_syndication as atom,
     extract_frontmatter::{config::Splitter, Extractor},
     gettextrs::gettext,
@@ -26,6 +25,7 @@ use {
     tinylog::Time as _,
     url::Url,
 };
+pub use {editor::edit, time::Time};
 
 #[derive(Clone, Debug)]
 /// The content type, page or post
@@ -60,9 +60,10 @@ impl TryFrom<&Meta> for Categories {
 
     fn try_from(meta: &Meta) -> Result<Self, Self::Error> {
         let mut categories = Vec::new();
+        let cfg = CFG.get().unwrap();
         for tag in &meta.tags {
-            let mut url = Url::parse(&format!("gemini://{}", CONFIG.domain))?;
-            let mut path = match &CONFIG.path {
+            let mut url = Url::parse(&format!("gemini://{}", cfg.domain))?;
+            let mut path = match &cfg.path {
                 Some(p) => PathBuf::from(&p),
                 None => PathBuf::from("/"),
             };
@@ -214,13 +215,14 @@ impl Page {
                 fs::create_dir_all(p)?;
             }
         }
+        let cfg = CFG.get().unwrap();
         let fd = File::create(path)?;
         let mut writer = BufWriter::new(fd);
         if let Some(s) = banner {
             writeln!(&mut writer, "```\n{s}\n```")?;
         }
         writeln!(&mut writer, "# {}", self.meta.title)?;
-        match &CONFIG.display_date {
+        match &cfg.display_date {
             DisplayDate::Always | DisplayDate::GemlogOnly
                 if path.parent().unwrap().to_str().unwrap().ends_with("gemlog") =>
             {
@@ -238,7 +240,7 @@ impl Page {
         }
         if !self.meta.tags.is_empty() {
             writeln!(&mut writer, "### {}", gettext("Tags for this page"))?;
-            let u = CONFIG.url()?;
+            let u = cfg.url()?;
             for tag in &self.meta.tags {
                 match depth {
                     1 => writeln!(&mut writer, "=> {}/{tag}.gmi {tag}", gettext("tags"))?,
@@ -255,7 +257,7 @@ impl Page {
             match depth {
                 1 => Cow::from("."),
                 2 => Cow::from(".."),
-                _ => Cow::from(CONFIG.url()?.to_string()),
+                _ => Cow::from(cfg.url()?.to_string()),
             },
             gettext("Home"),
         )?;

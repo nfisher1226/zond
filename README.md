@@ -21,8 +21,14 @@ If desired, a release distribution can then be generated which includes the foll
 - Documentation
 - Translations
 ```sh
-cargo xtask dist
+cargo build --release --features=bootstrap
 ```
+This will create a second binary named `bootstrap` which can then be used to either
+install the files directly into the filesystem or install everything into a staging
+directory, ready for creating a distribution package. For details, run the `bootstrap`
+binary with the `--help` option.
 ## Usage
 For full usage information, see the documents in the `doc/` subdirectory of the
-source repository.
+source repository. Short help can also be had via the `--help` or `-h` options passed
+to the main command or any subcommand, or by viewing one of the generated Unix manual
+pages.
