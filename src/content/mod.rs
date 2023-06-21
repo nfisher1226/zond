@@ -92,7 +92,7 @@ impl Meta {
 
     /// Given the title and `Kind` of this item, returns the path to the source file
     pub fn get_path(title: &str, kind: Kind) -> PathBuf {
-        let mut tpath = title.trim().to_lowercase().replace(' ', "_");
+        let mut tpath = sanitize_path(title);
         tpath.push_str(".gmi");
         match kind {
             Kind::Page(Some(path)) => path,
@@ -148,11 +148,7 @@ impl Page {
         summary: Option<&str>,
         tags: Vec<String>,
     ) -> Result<PathBuf, crate::Error> {
-        let mut tpath = title
-            .trim()
-            .to_lowercase()
-            .replace("re: ", "re_")
-            .replace(' ', "_");
+        let mut tpath = sanitize_path(title);
         tpath.push_str(".gmi");
         let file = match kind {
             Kind::Page(Some(path)) => path,
@@ -274,4 +270,14 @@ impl Page {
         crate::write_footer(&mut writer, year.try_into().expect("Year is out of range"))?;
         Ok(())
     }
+}
+
+fn sanitize_path(title: &str) -> String {
+    title
+        .trim()
+        .to_lowercase()
+        .replace(' ', "_")
+        .replace(':', "")
+        .replace('.', "_")
+        .replace('\'', "")
 }

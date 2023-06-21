@@ -43,7 +43,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     if let Some(e) = matches.get_one::<usize>("entries") {
         cfg.entries = *e;
     }
-    if let Some(d) = matches.get_one::<String>("display_email") {
+    if let Some(d) = matches.get_one::<String>("display_date") {
         cfg.display_date = d.parse()?;
     }
     if let Some(f) = matches.get_one::<String>("feed") {
@@ -57,15 +57,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), crate::Error> {
     if let Some(l) = matches.get_one::<String>("license") {
         cfg.license = Some(l.as_str().into());
     }
-    if let Some(e) = matches.get_one::<String>("show_email") {
-        cfg.show_email = match e.parse() {
-            Ok(s) => s,
-            Err(e) => {
-                eprintln!("{}: {e}", gettext("Error parsing input"));
-                return Err(e.into());
-            }
-        };
-    }
+    cfg.show_email = matches.get_flag("show_email");
     if !cfg_file.exists() {
         cfg.save()?;
     }

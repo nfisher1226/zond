@@ -1,5 +1,5 @@
 use {
-    crate::{content::Meta},
+    crate::content::Meta,
     serde::{Deserialize, Serialize},
     std::{env, fmt, path::Path},
 };
