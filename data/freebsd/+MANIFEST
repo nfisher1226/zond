@@ -1,0 +1,9 @@
+name: zond
+version: "0.4.0_1"
+origin: www/zond
+comment: "Gemini capsule static generator"
+desc: "A static site generator for Gemini capsules"
+maintainer: jeang3nie@hitchhiker-linux.org
+www: https://codeberg.org/jeang3nie/zond
+prefix: /usr/local
+deps: {}
