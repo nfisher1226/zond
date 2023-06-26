@@ -16,6 +16,7 @@ fn docs(outdir: &str) -> Result<(), std::io::Error> {
         "index.md",
         "page.md",
         "post.md",
+        "tinylog.md",
     ];
     let outdir: PathBuf = [outdir, "share", "doc", "zond"].iter().collect();
     if !outdir.exists() {
